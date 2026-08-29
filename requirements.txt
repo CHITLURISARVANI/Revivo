@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+razorpay
+openai
+httpx
+pytest
+python-dotenv

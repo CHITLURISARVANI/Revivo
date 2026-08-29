@@ -1,0 +1,553 @@
+openapi: 3.0.3
+info:
+  title: Reclaim — AI Revenue Recovery Agent
+  description: |
+    Reclaim is an AI agent that detects revenue leaks in a Razorpay merchant account,
+    diagnoses each leak, executes bounded recovery actions, and produces an audited
+    recovery report.
+
+    ## Authentication
+    All endpoints require Razorpay Test Mode API credentials passed as headers:
+    - `X-Razorpay-Key-Id`: Your Razorpay Test Key ID
+    - `X-Razorpay-Key-Secret`: Your Razorpay Test Key Secret
+
+    ## Modes
+    - `dry_run=true` (default): Detect and diagnose only. No write API calls to Razorpay.
+    - `dry_run=false`: Execute recovery actions via Razorpay API writes.
+
+    ## Safety
+    - Max 50 interventions per batch
+    - 3 consecutive API failures halt the batch
+    - 401 response halts immediately
+    - Each leak gets exactly 1 intervention attempt
+  version: 1.0.0
+  contact:
+    name: Sahil
+    url: https://github.com/sahil/reclaim
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:8000
+    description: Local development server
+
+tags:
+  - name: Scan
+    description: Trigger a revenue leak scan and recovery workflow
+  - name: Report
+    description: Fetch recovery reports and audit trails
+  - name: Health
+    description: Service health and status
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check
+      description: Returns service status, uptime, and version.
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          description: Service is unhealthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /scan:
+    post:
+      tags: [Scan]
+      summary: Trigger a revenue leak scan
+      description: |
+        Scans the merchant's Razorpay account for 5 types of revenue leaks:
+        1. Authorized-not-captured payments (L1)
+        2. Failed payments with retryable errors (L2)
+        3. Open disputes past contest deadline (L3)
+        4. Stuck pending refunds (L4)
+        5. Abandoned checkouts (L5)
+
+        In dry_run mode (default), the scan detects and diagnoses leaks but does NOT
+        execute any recovery actions. Set dry_run=false to execute bounded recovery
+        via Razorpay API writes.
+
+        The scan is synchronous for batches with <= 100 transactions. For larger batches,
+        use async_mode=true to get a batch_id immediately and poll /report/{batch_id}.
+      security:
+        - RazorpayAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScanRequest'
+      responses:
+        '200':
+          description: Scan completed successfully (sync mode)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScanResponse'
+        '202':
+          description: Scan accepted for async processing
+          headers:
+            Location:
+              description: URL to poll for the report
+              schema:
+                type: string
+                format: uri
+                example: http://localhost:8000/report/batch_550e8400-e29b-41d4-a716-446655440000
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScanAcceptedResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid or missing Razorpay credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /report/{batch_id}:
+    get:
+      tags: [Report]
+      summary: Fetch recovery report for a batch
+      description: |
+        Returns the full recovery report for a completed or in-progress scan batch.
+        Includes leak breakdown, recovery metrics, and audit trail.
+
+        If the scan is still in progress (async mode), returns partial results with
+        status=processing.
+      security:
+        - RazorpayAuth: []
+      parameters:
+        - name: batch_id
+          in: path
+          required: true
+          description: UUID of the scan batch
+          schema:
+            type: string
+            format: uuid
+            example: 550e8400-e29b-41d4-a716-446655440000
+        - name: format
+          in: query
+          required: false
+          description: Report format. json (default) returns structured data. text returns human-readable report.
+          schema:
+            type: string
+            enum: [json, text]
+            default: json
+        - name: include_audit
+          in: query
+          required: false
+          description: Include full audit trail in the response. Defaults to true.
+          schema:
+            type: boolean
+            default: true
+      responses:
+        '200':
+          description: Recovery report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecoveryReport'
+            text/plain:
+              schema:
+                type: string
+                description: Human-readable recovery report
+        '401':
+          description: Invalid or missing Razorpay credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Batch ID not found or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /report/{batch_id}/leaks:
+    get:
+      tags: [Report]
+      summary: List individual leaks in a batch
+      description: |
+        Returns a paginated list of individual leak records for a scan batch.
+        Each leak includes diagnosis, intervention result, and audit trail entry.
+      security:
+        - RazorpayAuth: []
+      parameters:
+        - name: batch_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: leak_type
+          in: query
+          required: false
+          description: Filter by leak type
+          schema:
+            type: string
+            enum: [L1, L2, L3, L4, L5]
+        - name: recoverable_only
+          in: query
+          required: false
+          description: If true, return only leaks deemed recoverable
+          schema:
+            type: boolean
+            default: false
+        - name: cursor
+          in: query
+          required: false
+          description: |
+            Base64-encoded cursor for pagination. Use nextCursor from the previous
+            response. Cursor-based pagination is stable under concurrent inserts
+            (unlike offset pagination, which can skip or duplicate items).
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Paginated list of leaks
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeakListResponse'
+        '401':
+          description: Invalid or missing Razorpay credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Batch ID not found or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    RazorpayAuth:
+      type: apiKey
+      in: header
+      name: X-Razorpay-Key-Id
+      description: Razorpay Test Mode Key ID. Paired with X-Razorpay-Key-Secret.
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      description: |
+        Unique key to prevent duplicate scan execution. If the same Idempotency-Key
+        is sent again within 24 hours, the original response is returned without
+        re-executing the scan. Format is UUID v4.
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    ScanRequest:
+      type: object
+      required: []
+      properties:
+        dry_run:
+          type: boolean
+          default: true
+          description: If true (default), detect and diagnose only with no Razorpay API writes. If false, execute bounded recovery actions.
+        async_mode:
+          type: boolean
+          default: false
+          description: If true, return immediately with a batch_id and process in the background. Poll /report/{batch_id} for results.
+        leak_types:
+          type: array
+          items:
+            type: string
+            enum: [L1, L2, L3, L4, L5]
+          description: Optional filter to scan only specific leak types. If omitted, all 5 are scanned.
+        amount_threshold:
+          type: number
+          format: float
+          minimum: 0
+          description: "Minimum amount (in INR) to consider a leak worth recovering. Leaks below this amount are logged but not intervened. Default is 0 (all amounts)."
+
+    ScanResponse:
+      type: object
+      required: [batch_id, status, report]
+      properties:
+        batch_id:
+          type: string
+          format: uuid
+          description: Unique identifier for this scan batch
+        status:
+          type: string
+          enum: [completed, completed_with_errors]
+          description: Final status of the sync scan
+        report:
+          $ref: '#/components/schemas/RecoveryReport'
+
+    ScanAcceptedResponse:
+      type: object
+      required: [batch_id, status]
+      properties:
+        batch_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [processing]
+        message:
+          type: string
+          example: Scan accepted. Poll /report/{batch_id} for results.
+
+    RecoveryReport:
+      type: object
+      required: [batch_id, status, summary, leak_breakdown]
+      properties:
+        batch_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [processing, completed, completed_with_errors, halted]
+          description: |
+            processing means async scan still running.
+            completed means scan finished, all leaks processed.
+            completed_with_errors means scan finished, some fetchers failed (see audit trail).
+            halted means stopping rules triggered, batch stopped early (see audit trail for reason).
+        mode:
+          type: string
+          enum: [dry_run, execute]
+        summary:
+          $ref: '#/components/schemas/RecoverySummary'
+        leak_breakdown:
+          type: array
+          items:
+            $ref: '#/components/schemas/LeakTypeBreakdown'
+        audit_trail:
+          type: array
+          description: Full audit trail of all API calls made. Empty if include_audit=false.
+          items:
+            $ref: '#/components/schemas/AuditEntry'
+        halted_reason:
+          type: string
+          nullable: true
+          description: If status=halted, the stopping rule that triggered the halt.
+          example: consecutive_failures_exceeded
+
+    RecoverySummary:
+      type: object
+      required: [total_leaks, total_at_risk_inr, total_recovered_inr, recovery_rate]
+      properties:
+        total_leaks:
+          type: integer
+          description: Total number of leaks detected
+        total_at_risk_inr:
+          type: number
+          format: float
+          description: Sum of all leak amounts in INR (money at risk)
+        total_recovered_inr:
+          type: number
+          format: float
+          description: Sum of amounts successfully recovered in INR
+        recovery_rate:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: Ratio of recovered to at-risk amount
+        unrecoverable_inr:
+          type: number
+          format: float
+          description: Sum of amounts deemed unrecoverable with reasons
+
+    LeakTypeBreakdown:
+      type: object
+      required: [leak_type, label, count, at_risk_inr, recovered_inr]
+      properties:
+        leak_type:
+          type: string
+          enum: [L1, L2, L3, L4, L5]
+        label:
+          type: string
+          example: Authorized-not-captured
+        count:
+          type: integer
+        at_risk_inr:
+          type: number
+          format: float
+        recovered_inr:
+          type: number
+          format: float
+        unrecoverable_count:
+          type: integer
+          description: Leaks of this type that were deemed unrecoverable
+
+    LeakListResponse:
+      type: object
+      required: [leaks, next_cursor]
+      properties:
+        leaks:
+          type: array
+          items:
+            $ref: '#/components/schemas/LeakDetail'
+        next_cursor:
+          type: string
+          nullable: true
+          description: Base64 cursor for next page. null means no more results.
+
+    LeakDetail:
+      type: object
+      required: [leak_id, leak_type, amount_inr, recoverable, status]
+      properties:
+        leak_id:
+          type: string
+          description: Unique ID for this leak (combination of leak_type + Razorpay entity ID)
+          example: L1-pay_abc123XYZ
+        leak_type:
+          type: string
+          enum: [L1, L2, L3, L4, L5]
+        label:
+          type: string
+          example: Authorized-not-captured
+        razorpay_entity_id:
+          type: string
+          description: The Razorpay payment/order/dispute/refund ID
+          example: pay_abc123XYZ
+        amount_inr:
+          type: number
+          format: float
+        detected_at:
+          type: string
+          format: date-time
+        recoverable:
+          type: boolean
+        recovery_action:
+          type: string
+          enum: [capture, retry_link, contest, escalate, send_link, none]
+        ai_reasoning:
+          type: string
+          description: LLM's reasoning for the diagnosis (if AI was used)
+          nullable: true
+        ai_confidence:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          nullable: true
+        intervention_status:
+          type: string
+          enum: [pending, executed, failed, skipped_dry_run, skipped_unrecoverable, skipped_halted]
+        intervention_result:
+          type: string
+          nullable: true
+          description: Result message from the intervention API call
+        audit_entry:
+          $ref: '#/components/schemas/AuditEntry'
+          nullable: true
+
+    AuditEntry:
+      type: object
+      required: [timestamp, endpoint, method, response_status, success]
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        endpoint:
+          type: string
+          example: POST /v1/payments/pay_abc123XYZ/capture
+        method:
+          type: string
+          enum: [GET, POST, PATCH]
+        request_body_redacted:
+          type: string
+          description: Request body with sensitive fields masked
+          nullable: true
+        response_status:
+          type: integer
+        response_body_redacted:
+          type: string
+          description: Response body with sensitive fields masked
+          nullable: true
+        duration_ms:
+          type: integer
+        success:
+          type: boolean
+
+    HealthResponse:
+      type: object
+      required: [status, version, uptime_seconds]
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        version:
+          type: string
+        uptime_seconds:
+          type: integer
+
+    ErrorResponse:
+      type: object
+      required: [success, error]
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              description: Machine-readable error code for client logic
+              enum:
+                - INVALID_REQUEST
+                - AUTH_FAILED
+                - RATE_LIMITED
+                - BATCH_NOT_FOUND
+                - BATCH_EXPIRED
+                - RAZORPAY_API_ERROR
+                - LLM_UNAVAILABLE
+                - STOPPING_RULE_TRIGGERED
+                - INTERNAL_ERROR
+            message:
+              type: string
+              description: Human-readable error message
+            request_id:
+              type: string
+              description: Request ID for tracing in logs

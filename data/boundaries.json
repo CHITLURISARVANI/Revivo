@@ -1,0 +1,47 @@
+{
+  "merchant": {
+    "name": "Test Merchant",
+    "razorpay_key_id_env": "RAZORPAY_KEY_ID",
+    "razorpay_key_secret_env": "RAZORPAY_KEY_SECRET"
+  },
+  "capture_guardian": {
+    "enabled": true,
+    "auto_capture_threshold_inr": 50000,
+    "min_authorized_age_hours": 6,
+    "escalate_above_threshold": true
+  },
+  "retry_strategist": {
+    "enabled": true,
+    "max_retries_per_payment": 2,
+    "retry_delay_minutes": 30,
+    "retry_only_above_inr": 100,
+    "classify_with_ai": true
+  },
+  "dispute_defender": {
+    "enabled": true,
+    "auto_contest_threshold_inr": 25000,
+    "never_auto_contest_categories": ["fraud"],
+    "min_winnability_score": 0.6,
+    "escalate_above_threshold": true
+  },
+  "refund_resolver": {
+    "enabled": true,
+    "auto_reissue_threshold_inr": 10000,
+    "min_pending_age_days": 7,
+    "max_reissue_attempts": 1,
+    "escalate_above_threshold": true
+  },
+  "checkout_rescuer": {
+    "enabled": true,
+    "min_order_amount_inr": 500,
+    "delay_before_recovery_minutes": 30,
+    "max_recovery_messages_per_order": 1,
+    "give_up_after_hours": 24
+  },
+  "notification": {
+    "channels": ["dashboard"],
+    "webhook_url": null,
+    "email": null,
+    "slack_webhook": null
+  }
+}

@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reclaim</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <!-- AUTH GATE (shown before app) -->
+    <div id="auth-gate" class="auth-gate">
+        <div class="auth-shell">
+            <div class="auth-brand">
+                <p class="auth-logo">Reclaim</p>
+                <p class="auth-tag">AI revenue recovery for Razorpay merchants</p>
+            </div>
+
+            <!-- STEP 1: choose path -->
+            <div id="auth-choice" class="auth-card">
+                <h1>Get started</h1>
+                <p class="auth-lead">Best for this product: connect the Razorpay account you already use. Create account is only if you are new to Reclaim.</p>
+
+                <button type="button" class="btn btn-primary btn-block" id="btn-razorpay-path">
+                    Connect with Razorpay
+                    <span class="btn-note">Recommended</span>
+                </button>
+                <button type="button" class="btn btn-ghost btn-block" id="btn-signup-path">
+                    Create account
+                </button>
+                <p class="auth-why">
+                    <strong>Why Razorpay first?</strong>
+                    Reclaim needs your payments data. Merchants already have Razorpay — no separate signup friction for the demo pitch.
+                </p>
+            </div>
+
+            <!-- STEP 2A: Connect Razorpay -->
+            <div id="auth-razorpay" class="auth-card hidden">
+                <button type="button" class="auth-back" id="back-from-rzp">← Back</button>
+                <h1>Connect Razorpay</h1>
+                <p class="auth-lead">Paste test API keys, or continue with demo data (no keys).</p>
+                <label class="field">
+                    <span>Key ID</span>
+                    <input type="text" id="rzp-key-id" placeholder="rzp_test_…" autocomplete="off">
+                </label>
+                <label class="field">
+                    <span>Key Secret</span>
+                    <input type="password" id="rzp-key-secret" placeholder="••••••••" autocomplete="off">
+                </label>
+                <button type="button" class="btn btn-primary btn-block" id="btn-connect-rzp">Connect &amp; open app</button>
+                <button type="button" class="btn btn-ghost btn-block" id="btn-demo-mode">Continue with demo data</button>
+                <p class="auth-fine">Keys stay in this browser only for the demo. Production would use secure OAuth / vault.</p>
+            </div>
+
+            <!-- STEP 2B: Create account -->
+            <div id="auth-signup" class="auth-card hidden">
+                <button type="button" class="auth-back" id="back-from-signup">← Back</button>
+                <h1>Create account</h1>
+                <p class="auth-lead">Then you will still connect Razorpay — that is where the money lives.</p>
+                <label class="field">
+                    <span>Business name</span>
+                    <input type="text" id="su-name" placeholder="Your store name">
+                </label>
+                <label class="field">
+                    <span>Work email</span>
+                    <input type="email" id="su-email" placeholder="you@business.com">
+                </label>
+                <label class="field">
+                    <span>Password</span>
+                    <input type="password" id="su-pass" placeholder="Min 6 characters">
+                </label>
+                <button type="button" class="btn btn-primary btn-block" id="btn-create-account">Create account</button>
+                <p class="auth-fine">Demo only — saved in this browser, not a real backend auth.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="app hidden" id="app-shell">
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <span class="logo">Reclaim</span>
+                <span class="logo-sub">Revenue recovery</span>
+            </div>
+            <nav class="sidebar-nav" id="sidebar-nav">
+                <button type="button" class="nav-item active" data-view="home">Home</button>
+                <button type="button" class="nav-item" data-view="scan">Run scan</button>
+                <button type="button" class="nav-item" data-view="issues">Issues</button>
+                <button type="button" class="nav-item" data-view="escalations">Escalations</button>
+                <button type="button" class="nav-item" data-view="audit">Audit trail</button>
+                <button type="button" class="nav-item" data-view="architecture">Architecture</button>
+                <button type="button" class="nav-item" data-view="rules">Your rules</button>
+            </nav>
+            <div class="sidebar-foot">
+                <p id="merchant-name" class="merchant-name">—</p>
+                <p id="mode-indicator">Mode: …</p>
+                <p class="sidebar-hint">Razorpay Buildathon · Track 03</p>
+                <button type="button" class="btn-logout" id="logout-btn">Log out</button>
+            </div>
+        </aside>
+        <!-- MAIN -->
+        <main class="main">
+            <header class="topbar">
+                <div>
+                    <h1 class="page-title" id="page-title">Home</h1>
+                    <p class="page-desc" id="page-desc">Welcome — recover revenue leaking from your Razorpay account.</p>
+                </div>
+                <div class="topbar-actions">
+                    <button type="button" class="btn btn-ghost" id="reset-btn">Reset demo</button>
+                    <button type="button" class="btn btn-primary" id="scan-btn">Run scan</button>
+                </div>
+            </header>
+
+            <!-- HOME -->
+            <section class="view active" id="view-home">
+                <div class="welcome">
+                    <h2>What Reclaim does</h2>
+                    <p>Connects to Razorpay → finds 5 types of lost money → recovers what it can automatically → asks you only when amount is too high.</p>
+                </div>
+
+                <div class="stat-row" id="home-stats">
+                    <div class="stat">
+                        <span class="stat-label">Recovered</span>
+                        <span class="stat-value recover" id="home-recovered">₹0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">At risk</span>
+                        <span class="stat-value risk" id="home-at-risk">₹0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Pending</span>
+                        <span class="stat-value pending" id="home-pending">₹0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Need your review</span>
+                        <span class="stat-value" id="home-escalated">0</span>
+                    </div>
+                </div>
+
+                <div class="steps">
+                    <h3>3 steps for a new user</h3>
+                    <ol>
+                        <li><strong>Open Run scan</strong> (left menu) or click the green button above.</li>
+                        <li><strong>Wait ~2 seconds</strong> — 5 engines check payments, disputes, refunds, checkouts.</li>
+                        <li><strong>See results</strong> on Issues, Escalations, and Audit trail.</li>
+                    </ol>
+                    <button type="button" class="btn btn-primary" id="home-scan-btn">Start my first scan</button>
+                </div>
+
+                <div class="leak-grid">
+                    <h3>The 5 leaks we fix</h3>
+                    <div class="leak-items">
+                        <div><b>1. Capture</b><span>Authorized but never captured</span></div>
+                        <div><b>2. Retry</b><span>Failed payment that can succeed again</span></div>
+                        <div><b>3. Dispute</b><span>Open chargeback you can contest</span></div>
+                        <div><b>4. Refund</b><span>Stuck refund angering customers</span></div>
+                        <div><b>5. Checkout</b><span>Abandoned cart with email/phone</span></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SCAN -->
+            <section class="view" id="view-scan">
+                <div class="panel">
+                    <h2>Run a full recovery scan</h2>
+                    <p class="muted">Scans simulated Razorpay data (or your test keys if set). No setup needed for the demo.</p>
+                    <button type="button" class="btn btn-primary btn-lg" id="scan-btn-main">Run scan now</button>
+                </div>
+
+                <div id="loading" class="panel loading hidden">
+                    <div class="progress"><div class="progress-bar"></div></div>
+                    <p><strong>Scanning…</strong></p>
+                    <ul id="loading-steps" class="loading-steps">
+                        <li>1. Capture Guardian</li>
+                        <li>2. Retry Strategist</li>
+                        <li>3. Dispute Defender</li>
+                        <li>4. Refund Resolver</li>
+                        <li>5. Checkout Rescuer</li>
+                    </ul>
+                </div>
+
+                <div id="scan-results" class="hidden">
+                    <div class="stat-row">
+                        <div class="stat">
+                            <span class="stat-label">Scanned</span>
+                            <span class="stat-value" id="stat-scanned">0</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Issues found</span>
+                            <span class="stat-value" id="stat-issues">0</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Recovered</span>
+                            <span class="stat-value recover" id="stat-recovered">₹0</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Pending</span>
+                            <span class="stat-value pending" id="stat-pending">₹0</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Escalated</span>
+                            <span class="stat-value risk" id="stat-escalated">0</span>
+                        </div>
+                    </div>
+
+                    <h3 class="block-h">Per engine</h3>
+                    <div id="engines-body" class="engine-list"></div>
+
+                    <div class="next-links">
+                        <button type="button" class="btn btn-ghost" data-goto="issues">View all issues →</button>
+                        <button type="button" class="btn btn-ghost" data-goto="escalations">Review escalations →</button>
+                        <button type="button" class="btn btn-ghost" data-goto="audit">Open audit trail →</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ISSUES -->
+            <section class="view" id="view-issues">
+                <div class="panel">
+                    <p class="muted" id="issues-empty">No issues yet. Run a scan first.</p>
+                    <div class="table-wrap hidden" id="issues-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Engine</th>
+                                    <th>Issue</th>
+                                    <th>ID</th>
+                                    <th>Amount</th>
+                                    <th>Action</th>
+                                    <th>Result</th>
+                                    <th>AI note</th>
+                                </tr>
+                            </thead>
+                            <tbody id="issues-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ESCALATIONS -->
+            <section class="view" id="view-escalations">
+                <div class="panel">
+                    <p class="muted">These are above your auto-action limits. Reclaim did <strong>not</strong> execute them.</p>
+                    <div id="escalations-body" class="escalation-list">
+                        <p class="muted" id="escalations-empty">None yet. Run a scan first.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- AUDIT -->
+            <section class="view" id="view-audit">
+                <div class="panel">
+                    <p class="muted">Append-only log. Every detect → diagnose → decide → execute.</p>
+                    <div id="audit-trail" class="audit-list">
+                        <p class="muted" id="audit-empty">No audit entries yet. Run a scan first.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ARCHITECTURE -->
+            <section class="view" id="view-architecture">
+                <div class="panel">
+                    <h2>System architecture</h2>
+                    <p class="muted">Simple flow — same pattern every time.</p>
+
+                    <div class="arch-flow" aria-label="Architecture diagram">
+                        <div class="arch-box you">You (merchant)</div>
+                        <div class="arch-arrow">↓</div>
+                        <div class="arch-box">Website / API</div>
+                        <div class="arch-arrow">↓</div>
+                        <div class="arch-box highlight">Orchestrator</div>
+                        <div class="arch-arrow">↓ runs</div>
+                        <div class="arch-engines">
+                            <span>Capture Guardian</span>
+                            <span>Retry Strategist</span>
+                            <span>Dispute Defender</span>
+                            <span>Refund Resolver</span>
+                            <span>Checkout Rescuer</span>
+                        </div>
+                        <div class="arch-arrow">↓ each engine</div>
+                        <div class="arch-row">
+                            <div class="arch-box">AI layer<br><small>classify / score / message</small></div>
+                            <div class="arch-box">Boundary rules<br><small>amount & category limits</small></div>
+                        </div>
+                        <div class="arch-arrow">↓ if allowed</div>
+                        <div class="arch-box">Razorpay APIs</div>
+                        <div class="arch-arrow">↓ always</div>
+                        <div class="arch-box">Audit trail (SQLite)</div>
+                    </div>
+
+                    <h3 class="block-h">Request flow (one issue)</h3>
+                    <ol class="flow-ol">
+                        <li><code>scan()</code> — fetch payments / disputes / refunds / orders</li>
+                        <li><code>diagnose()</code> — AI or rules decide what happened</li>
+                        <li><code>decide()</code> — check your rules (boundary enforcer)</li>
+                        <li><code>execute()</code> — capture / retry link / contest / refund / message</li>
+                        <li><code>audit()</code> — write plain-English log entry</li>
+                    </ol>
+                </div>
+            </section>
+
+            <!-- RULES -->
+            <section class="view" id="view-rules">
+                <div class="panel">
+                    <h2>Your recovery rules</h2>
+                    <p class="muted">Loaded from <code>data/boundaries.json</code>. Above these limits → escalation, not auto-action.</p>
+                    <div id="rules-body" class="rules-grid">
+                        <p class="muted">Loading…</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <button type="button" class="menu-toggle" id="menu-toggle" aria-label="Menu">Menu</button>
+    <script src="/static/app.js"></script>
+</body>
+</html>
