@@ -1,143 +1,132 @@
 # Revivo — AI Revenue Recovery Agent
 
-> **Payout.app found money consumers didn't know they were owed. Revivo finds money merchants don't know they're losing — and autonomously recovers it through Razorpay APIs.**
->
-> Built for Razorpay AI Buildathon 2026 — Track 03 (AI Revenue Recovery)
+> **Payout.app found money consumers didn't know they were owed. Revivo finds money merchants don't know they're losing — and recovers it autonomously through Razorpay APIs.**
+
+**Built for Razorpay AI Buildathon 2026 — Track 03**
+
+---
 
 ## The Problem
 
-Merchants lose 1-3% of gross revenue to 5 silent leaks they never check:
+Merchants lose **1–3% of GMV** to five silent leaks they rarely check: authorized-but-not-captured payments, failed payments never retried, uncontested disputes, stuck refunds, and abandoned checkouts. For a merchant processing **₹50L/month**, that is **₹50,000–₹1,50,000** drained every month — not from fraud or competition, but from inattention. Dashboards show history; they don't recover the leak.
 
-1. **Authorized, Never Captured** — Payment authorized but webhook down → auto-refunded after 3 days
-2. **Failed Payments, Never Retried** — Transient failures (bank downtime) treated as permanent losses
-3. **Disputes, Never Contested** — Merchant has delivery proof but misses the 37-day contest window
-4. **Stuck Refunds** — Customer's card expired, refund pending 21 days, customer chargebacks in frustration
-5. **Abandoned Checkouts** — Customer entered email + phone, closed tab, nobody followed up
+---
 
-## The Solution
+## Live Demo
 
-Revivo is an AI agent with 5 engines that plugs into a merchant's Razorpay account and autonomously:
+**https://revivo-n6c0.onrender.com**
 
-1. **Detects** revenue at risk by scanning payments, disputes, refunds, and orders
-2. **Diagnoses** root causes using AI (transient vs permanent failure, dispute winnability)
-3. **Decides** the right intervention within merchant-set boundaries
-4. **Executes** recovery actions through Razorpay APIs (capture, retry link, contest, instant refund)
-5. **Reports** measured money recovered with a full append-only audit trail
+> Free-tier hosting may take **30–60s** to wake on first load — refresh once if needed.
 
-## 5 Recovery Engines
+**Click “Continue with demo data” → “Run scan”** to see all 5 engines detect and recover **₹75,900** across **15** simulated issues.
 
-| Engine | Leak Target | Razorpay APIs |
-|---|---|---|
-| Capture Guardian | Authorized-not-captured | `GET /payments`, `POST /payments/{id}/capture` |
-| Retry Strategist | Failed payments | `GET /payments`, `POST /payment_links` |
-| Dispute Defender | Uncontested disputes | `GET /disputes`, `PATCH /disputes/{id}/contest` |
-| Refund Resolver | Stuck refunds | `GET /refunds`, `POST /refunds` |
-| Checkout Rescuer | Abandoned checkouts | `GET /orders`, `POST /payment_links` |
+---
 
-## AI Reasoning Layer
+## How It Works
 
-| Function | Purpose | Fallback |
-|---|---|---|
-| `classify_failure()` | Classify payment failure as transient/permanent/ambiguous | Rules-based error code matching |
-| `score_dispute_winnability()` | Score 0.0-1.0 how winnable a dispute is | Rules-based on dispute reason + evidence |
-| `generate_dispute_evidence()` | Generate structured contest evidence | Template-based evidence |
-| `generate_recovery_message()` | Generate personalized Hinglish recovery SMS | Template-based message |
+An **orchestrator** runs five engines in one scan. Each issue follows: **detect → diagnose (AI where it matters) → decide (boundary check) → execute or escalate → audit log**.
 
-Every AI function has a rules-based fallback. The demo works without an OpenAI API key.
+```
+Razorpay data
+     │
+     ▼
+┌─────────────┐
+│ Orchestrator│
+└──────┬──────┘
+       ├── Capture Guardian     → capture authorized payments
+       ├── Retry Strategist     → retry transient failures
+       ├── Dispute Defender     → contest winnable disputes
+       ├── Refund Resolver      → reissue stuck refunds
+       └── Checkout Rescuer     → recover abandoned checkouts
+              │
+              ▼
+     Boundary Enforcer ──► execute  |  escalate to human
+              │
+              ▼
+         Audit trail (append-only)
+```
 
-## Quick Start
+---
+
+## Where AI Actually Matters
+
+Not decoration — three places where judgment changes the action:
+
+| Engine | AI job |
+|---|---|
+| **Retry Strategist** | Classifies failures as **transient vs permanent** (e.g. UPI bank outage vs insufficient funds) with a confidence score |
+| **Dispute Defender** | Scores **dispute winnability** from evidence and builds structured contest packages |
+| **Checkout Rescuer** | Generates personalized **Hinglish** recovery messages with payment links |
+
+All three have a **rules-based fallback** if no OpenAI key is set — the demo runs without one.
+
+---
+
+## Merchant Boundaries (Safety First)
+
+Every auto-action is gated by `data/boundaries.json`. Above threshold → **escalated to a human**, never silently auto-executed.
+
+| Engine | Guardrail |
+|---|---|
+| Capture Guardian | Auto-capture only below **₹50,000** |
+| Retry Strategist | Max **2** retries, **30 min** gap |
+| Dispute Defender | Auto-contest only below **₹25,000**; **never** auto for **fraud** |
+| Refund Resolver | Auto-reissue only below **₹10,000** |
+| Checkout Rescuer | Recovery only for orders ≥ **₹500** |
+
+---
+
+## Testing
+
+69 automated tests cover every engine, boundary rule, AI classifier, and audit invariant — including full scan determinism (same seed → same result every run) and correct `[SIMULATED]` tagging in demo mode.
 
 ```bash
-# Install dependencies
-pip install -r requirements.txt
-
-# Seed synthetic demo data (50 entities, all 5 leak types)
-python scripts/seed_test_data.py
-
-# Run the CLI demo (works without API keys — uses simulated data + rules-based AI)
-python demo.py
-
-# Start the website (landing + live demo workspace)
-python server.py
-# Open http://localhost:8000
-# Click "Scan Razorpay" for the 5-minute demo flow
-
-# Run tests
-python -m pytest -v
-
-# Or use the API
-curl http://localhost:8000/
-curl -X POST http://localhost:8000/api/scan
-curl http://localhost:8000/api/dashboard
-curl http://localhost:8000/api/issues
-curl http://localhost:8000/api/escalations
+python -m pytest -v   # 69 passed
 ```
 
-## Configuration
+---
 
-Create a `.env` file (optional — demo works without it):
+## Simulated vs Live
 
-```
-RAZORPAY_KEY_ID=your_test_key_id
-RAZORPAY_KEY_SECRET=your_test_key_secret
-OPENAI_API_KEY=your_openai_key
-```
+Demo mode uses seeded synthetic data (`scripts/seed_test_data.py`) and tags every automated action `[SIMULATED]` in the audit trail. Live mode uses real Razorpay test-mode keys via `.env` — same orchestrator, same engines, same boundary logic, no code swap needed. The `[SIMULATED]` tag disappears automatically once live keys are set.
 
-- **Razorpay keys**: Get from https://dashboard.razorpay.com/app/keys (test mode, free)
-- **OpenAI key**: Get from https://platform.openai.com (optional — fallback works without it)
-
-## Merchant Boundaries
-
-Every action is bounded by merchant-set rules in `data/boundaries.json`:
-
-| Rule | Default |
-|---|---|
-| Auto-capture threshold | ₹50,000 |
-| Max retries per payment | 2 |
-| Auto-contest dispute threshold | ₹25,000 |
-| Never auto-contest | Fraud category |
-| Auto-reissue refund threshold | ₹10,000 |
-| Min abandoned order for recovery | ₹500 |
-
-Actions above thresholds are escalated to the merchant. Never executed autonomously.
-
-## Architecture
-
-```
-Merchant Dashboard → FastAPI → Orchestrator
-                                ├── Engine 1: Capture Guardian
-                                ├── Engine 2: Retry Strategist
-                                ├── Engine 3: Dispute Defender
-                                ├── Engine 4: Refund Resolver
-                                ├── Engine 5: Checkout Rescuer
-                                ├── AI Reasoning Layer (LLM + fallback)
-                                ├── Boundary Enforcer (guardrails)
-                                ├── Audit Logger (append-only)
-                                └── Razorpay Client → Razorpay API
-```
-
-## Track 03 Compliance
-
-- ✅ Detect revenue at risk → 5 engines scan payments, disputes, refunds, orders
-- ✅ Determine right intervention → AI diagnoses root cause per case
-- ✅ Execute bounded recovery → within merchant thresholds
-- ✅ Show measured money recovered → demo shows recovered amount across batch
-- ✅ Compliant escalation → above-threshold actions to human review
-- ✅ Stopping rules → max retries, max messages, no auto-contest above threshold
-- ✅ Audit trail → append-only, every action logged with plain-English explanation
-
-## The One-Liner
-
-> **"Payout.app found money consumers didn't know they were owed. Revivo finds money merchants don't know they're losing — and autonomously recovers it through Razorpay APIs."**
+---
 
 ## Tech Stack
 
-- Python 3.11 + FastAPI
-- Razorpay Python SDK
-- OpenAI API (gpt-4o-mini) with rules-based fallback
-- SQLite (audit ledger)
-- Vanilla HTML/JS/CSS dashboard
+| Component | Technology |
+|---|---|
+| Backend | Python 3.11 + FastAPI |
+| Razorpay | Official `razorpay` Python SDK |
+| AI | OpenAI **gpt-4o-mini** (rules fallback) |
+| Database | SQLite |
+| Dashboard | HTML + Vanilla JS + CSS |
+| Tests | pytest |
 
-## License
+---
 
-MIT
+## Running Locally
+
+```bash
+git clone https://github.com/CHITLURISARVANI/Revivo.git
+cd Revivo
+pip install -r requirements.txt
+
+# Optional — demo works without keys (simulated Razorpay + AI fallback)
+# RAZORPAY_KEY_ID=...  RAZORPAY_KEY_SECRET=...  OPENAI_API_KEY=...
+
+python server.py
+# → http://localhost:8000
+# Connect with Razorpay → Continue with demo data → Run scan
+```
+
+```bash
+python -m pytest -v          # full suite
+python demo.py               # CLI end-to-end scan
+```
+
+---
+
+## Repo
+
+**https://github.com/CHITLURISARVANI/Revivo**
