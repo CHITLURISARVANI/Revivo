@@ -109,7 +109,7 @@ def _classify_with_rules(payment_data: dict) -> dict:
     """
     error_code = (payment_data.get("error_code") or "").upper()
     error_desc = (payment_data.get("error_description") or "").upper()
-    method = (payment_data.get("method") or "").lower()
+    method = (payment_data.get("method") or payment_data.get("payment_method") or "").lower()
 
     # Check transient patterns
     if error_code in TRANSIENT_ERROR_CODES:

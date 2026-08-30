@@ -23,9 +23,13 @@ sys.path.insert(0, str(ROOT))
 
 DATA_PATH = ROOT / "data" / "synthetic_payments.json"
 
+# Deterministic reference time (must match core.demo_clock.FIXED_NOW)
+FIXED_NOW = datetime(2026, 8, 30, 12, 0, 0, tzinfo=timezone.utc)
 
-def build_dataset() -> dict:
-    now = datetime.now(timezone.utc)
+
+def build_dataset(now: datetime | None = None) -> dict:
+    """Build the same synthetic dataset every time (no wall-clock drift)."""
+    now = now or FIXED_NOW
     base = int((now - timedelta(days=2)).timestamp())
 
     payments = []

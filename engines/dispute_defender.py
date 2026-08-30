@@ -106,6 +106,23 @@ class DisputeDefender:
             "is_recurring_payment": False,
         }
 
+    def _ai_evidence_line(self, diagnosis: dict, fallback_reasoning: str) -> str:
+        """Human-readable AI column text with tracking when available."""
+        evidence_pkg = diagnosis.get("evidence") or {}
+        dispute_data = diagnosis.get("dispute_data") or {}
+        avail = dispute_data.get("available_evidence") or {}
+        tracking = avail.get("tracking_number")
+        signed = avail.get("delivery_signed_by")
+        if tracking:
+            line = f"Delhivery tracking {tracking} delivered"
+            if signed:
+                line += f", signed by {signed}"
+            summary = evidence_pkg.get("summary")
+            if summary:
+                line += f" — {summary}"
+            return line
+        return fallback_reasoning or evidence_pkg.get("summary") or ""
+
     def execute(self, issue: dict, diagnosis: dict) -> dict:
         """Contest the dispute within bounds, or escalate."""
         amount = issue["amount_inr"]
@@ -159,16 +176,25 @@ class DisputeDefender:
                 "razorpay_entity_id": dispute_id,
                 "amount_inr": amount,
                 "ai_winnability_score": score,
-                "ai_reasoning": reasoning,
+                "ai_reasoning": self._ai_evidence_line(diagnosis, reasoning),
+                "evidence_summary": (diagnosis.get("evidence") or {}).get("summary"),
                 "action_taken": "escalated",
                 "action_result": "escalated",
                 "escalated": True,
                 "recovered": False,
             }
 
-        # Check boundaries
-        category = reason_code if reason_code in self.config.get("never_auto_contest_categories", []) else None
-        boundary = check_action("dispute_defender", "auto_contest", amount, category=category)
+        # Check boundaries (never auto-contest fraud; amount + winnability gates)
+        raw_reason = (reason_code or "").lower()
+        restricted = [c.lower() for c in self.config.get("never_auto_contest_categories", [])]
+        category = next((c for c in restricted if c == raw_reason or c in raw_reason), None)
+        boundary = check_action(
+            "dispute_defender",
+            "auto_contest",
+            amount,
+            category=category,
+            winnability_score=score,
+        )
 
         if not boundary.allowed:
             audit_log(
@@ -189,6 +215,8 @@ class DisputeDefender:
                 "razorpay_entity_id": dispute_id,
                 "amount_inr": amount,
                 "ai_winnability_score": score,
+                "ai_reasoning": self._ai_evidence_line(diagnosis, reasoning),
+                "evidence_summary": (diagnosis.get("evidence") or {}).get("summary"),
                 "action_taken": "escalated",
                 "action_result": "blocked",
                 "escalated": True,
@@ -233,11 +261,11 @@ class DisputeDefender:
             "razorpay_entity_id": dispute_id,
             "amount_inr": amount,
             "ai_winnability_score": score,
-            "ai_reasoning": reasoning,
+            "ai_reasoning": self._ai_evidence_line(diagnosis, reasoning),
+            "evidence_summary": evidence.get("summary", "") if evidence else "",
             "action_taken": "contested",
             "action_result": "success" if contested else "failed",
             "amount_recovered_inr": amount if contested else 0,  # contested = potentially recovered
-            "evidence_summary": evidence.get("summary", "") if evidence else "",
             "escalated": False,
             "recovered": contested,
             "pending": not contested,

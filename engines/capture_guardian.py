@@ -7,6 +7,7 @@ import uuid
 from datetime import datetime, timezone, timedelta
 from core.audit_logger import log as audit_log
 from core.boundary_enforcer import check_action
+from core.demo_clock import now_utc, client_is_simulated
 
 
 class CaptureGuardian:
@@ -23,6 +24,7 @@ class CaptureGuardian:
         payments = self.razorpay.fetch_authorized_payments()
         issues = []
         min_age_hours = self.config.get("min_authorized_age_hours", 6)
+        clock = now_utc(simulated=client_is_simulated(self.razorpay))
 
         for p in payments:
             amount_inr = p.get("amount", 0) / 100  # paise → INR
@@ -32,7 +34,7 @@ class CaptureGuardian:
             if created_at:
                 try:
                     created_dt = datetime.fromtimestamp(created_at, tz=timezone.utc)
-                    age_hours = (datetime.now(timezone.utc) - created_dt).total_seconds() / 3600
+                    age_hours = (clock - created_dt).total_seconds() / 3600
                 except (ValueError, TypeError, OSError):
                     age_hours = min_age_hours + 1  # assume old enough
             else:
@@ -152,8 +154,12 @@ class CaptureGuardian:
             amount_recovered_inr=amount if captured else 0,
             razorpay_api_called=f"POST /payments/{payment_id}/capture",
             razorpay_api_response=f"status={result.get('status')}" + (" (simulated)" if simulated else ""),
-            human_readable=f"✅ Captured payment {payment_id} (₹{amount:,.0f}) — authorized for {issue['age_hours']}h." +
-                          (" [SIMULATED]" if simulated else ""),
+            human_readable=(
+                f"Captured payment {payment_id} (₹{amount:,.0f}) — authorized for "
+                f"{issue['age_hours']}h, auto-captured. Reason: webhook delivery failure "
+                f"or merchant oversight."
+                + (" [SIMULATED]" if simulated else "")
+            ),
         )
 
         return {

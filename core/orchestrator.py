@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from core.database import get_connection, init_db
 from core.audit_logger import log as audit_log
 from core.boundary_enforcer import load_boundaries
-from core.issue_store import save_issue, save_escalation
+from core.issue_store import save_issue, save_escalation, rebuild_scan_payload
 from razorpay_client.client import RazorpayClient
 
 from engines.capture_guardian import CaptureGuardian
@@ -114,11 +114,12 @@ def run_scan() -> dict:
         SET completed_at = ?, status = 'completed',
             total_payments_scanned = ?, total_issues_found = ?,
             total_amount_at_risk_inr = ?, total_amount_recovered_inr = ?,
+            total_amount_pending_inr = ?,
             total_escalations = ?
         WHERE id = ?
         """,
         (completed_at, total_scanned, total_issues,
-         total_at_risk, total_recovered, total_escalations,
+         total_at_risk, total_recovered, total_pending, total_escalations,
          scan_run_id),
     )
     conn.commit()
@@ -183,7 +184,7 @@ def get_scan_result(scan_run_id: str) -> dict:
 
 
 def get_dashboard_data() -> dict:
-    """Get aggregated data for the dashboard."""
+    """Get aggregated data for the dashboard, including a rebuildable scan payload."""
     conn = get_connection()
 
     # Latest scan run
@@ -198,10 +199,12 @@ def get_dashboard_data() -> dict:
             "message": "No scans run yet. Click 'Scan Now' to start.",
         }
 
+    latest_id = latest["id"]
+
     # Recent audit entries
     audit_entries = conn.execute(
         "SELECT * FROM audit_entries WHERE scan_run_id = ? ORDER BY timestamp ASC",
-        (latest["id"],),
+        (latest_id,),
     ).fetchall()
 
     # All-time stats
@@ -212,9 +215,12 @@ def get_dashboard_data() -> dict:
 
     conn.close()
 
+    payload = rebuild_scan_payload(latest_id)
+
     return {
         "has_data": True,
         "latest_scan": dict(latest),
+        "scan_payload": payload,
         "audit_trail": [dict(e) for e in audit_entries],
         "all_time": {
             "total_scans": totals["count"] if totals else 0,

@@ -4,9 +4,12 @@ personalized Hinglish recovery messages with payment links.
 """
 
 import uuid
+from datetime import datetime, timezone
 from ai.message_gen import generate_recovery_message
 from core.audit_logger import log as audit_log
 from core.boundary_enforcer import check_action
+from core.issue_store import count_recovery_messages
+from core.demo_clock import now_utc, client_is_simulated
 
 
 class CheckoutRescuer:
@@ -23,6 +26,11 @@ class CheckoutRescuer:
         orders = self.razorpay.fetch_created_orders()
         issues = []
         min_amount = self.config.get("min_order_amount_inr", 500)
+        delay_minutes = self.config.get("delay_before_recovery_minutes", 30)
+        give_up_hours = self.config.get("give_up_after_hours", 24)
+        max_messages = self.config.get("max_recovery_messages_per_order", 1)
+        clock = now_utc(simulated=client_is_simulated(self.razorpay))
+        history_scan_id = self.scan_run_id if client_is_simulated(self.razorpay) else None
 
         for o in orders:
             amount_inr = o.get("amount", 0) / 100
@@ -38,14 +46,33 @@ class CheckoutRescuer:
             if not customer_email and not customer_phone:
                 continue
 
+            created_at = o.get("created_at") or 0
+            try:
+                created_dt = datetime.fromtimestamp(created_at, tz=timezone.utc)
+                age_minutes = (clock - created_dt).total_seconds() / 60.0
+            except (ValueError, TypeError, OSError):
+                age_minutes = delay_minutes + 1
+
+            # Too fresh — wait before recovery
+            if age_minutes < delay_minutes:
+                continue
+            # Too old — outside recovery window
+            if age_minutes > give_up_hours * 60:
+                continue
+
+            order_id = o.get("id")
+            if count_recovery_messages(order_id, scan_run_id=history_scan_id) >= max_messages:
+                continue
+
             issues.append({
-                "order_id": o.get("id"),
+                "order_id": order_id,
                 "amount_inr": amount_inr,
                 "receipt": o.get("receipt"),
                 "customer_name": customer_name,
                 "customer_email": customer_email,
                 "customer_phone": customer_phone,
-                "created_at": o.get("created_at"),
+                "created_at": created_at,
+                "age_minutes": round(age_minutes, 1),
                 "amount_due": o.get("amount_due", 0) / 100,
             })
 

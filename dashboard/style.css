@@ -653,7 +653,115 @@ a { color: inherit; text-decoration: none; }
     margin-bottom: 0.55rem;
 }
 .leak-card strong { display: block; margin-bottom: 0.2rem; }
-.leak-card span { color: var(--ink-soft); font-size: 0.8rem; }
+.leak-card span { color: var(--ink-soft); font-size: 0.8rem; display: block; }
+
+.eta-badge {
+    display: inline-block;
+    margin-top: 0.65rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 999px;
+    font-style: normal;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    background: var(--bg);
+    color: var(--brand);
+    border: 1px solid var(--line);
+}
+.eta-badge.fast { background: var(--recover-soft); color: var(--recover); border-color: rgba(15,138,75,0.25); }
+.eta-badge.mid { background: var(--pending-soft); color: var(--pending); border-color: rgba(154,106,10,0.25); }
+.eta-badge.slow { background: var(--risk-soft); color: var(--risk); border-color: rgba(194,69,45,0.25); }
+
+.eta-tab.active {
+    border-color: rgba(11, 63, 52, 0.55);
+    box-shadow: var(--shadow-hover);
+    background: linear-gradient(180deg, #eef8f3, #fff);
+    transform: translateY(-2px);
+}
+
+.eta-detail {
+    margin-top: 0.95rem;
+    padding: 1.05rem 1.1rem;
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    background:
+        radial-gradient(120% 80% at 0% 0%, rgba(15, 138, 75, 0.08), transparent 55%),
+        linear-gradient(180deg, #f8fcfa, #fff);
+    animation: rise 0.35s var(--ease);
+}
+.eta-detail.is-switching {
+    animation: none;
+    opacity: 0.55;
+    transform: translateY(4px);
+    transition: opacity 0.15s, transform 0.15s;
+}
+.eta-detail-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    margin-bottom: 0.85rem;
+}
+.eta-detail h4 {
+    font-size: 1.25rem;
+    letter-spacing: -0.02em;
+    margin: 0.15rem 0 0.35rem;
+}
+.eta-detail .lead { margin: 0; max-width: 42rem; }
+.eta-range {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--brand);
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 0.65rem 0.85rem;
+    white-space: nowrap;
+}
+
+.eta-speed { margin-bottom: 0.9rem; }
+.eta-speed-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+    margin-bottom: 0.35rem;
+}
+.eta-speed-track {
+    height: 10px;
+    border-radius: 999px;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    overflow: hidden;
+}
+.eta-speed-fill {
+    height: 100%;
+    width: 0;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--brand), var(--recover));
+    transition: width 0.55s var(--ease);
+}
+
+.eta-steps {
+    margin: 0 0 0.85rem;
+    padding-left: 1.15rem;
+    color: var(--ink);
+}
+.eta-steps li {
+    margin-bottom: 0.35rem;
+    font-size: 0.9rem;
+}
+.eta-window {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin: 0;
+    font-size: 0.82rem;
+    color: var(--ink-soft);
+}
+.eta-window i { width: 15px; height: 15px; flex-shrink: 0; }
 
 .action-banner, .result-banner, .insight-hero {
     display: flex;
@@ -814,6 +922,40 @@ a { color: inherit; text-decoration: none; }
     background: linear-gradient(90deg, var(--brand), var(--recover));
     transition: width 0.85s var(--ease);
 }
+
+.brand small { display: block; color: rgba(234, 245, 240, 0.65); font-size: 0.72rem; }
+.build-pill {
+    display: inline-flex;
+    align-items: center;
+    margin-top: 0.35rem;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #0b3f34;
+    background: #d8f3e6;
+    border: 1px solid rgba(15, 138, 75, 0.35);
+}
+.build-pill.topbar-build {
+    margin-top: 0;
+    background: var(--recover-soft);
+    color: var(--brand);
+}
+.topbar-right { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+
+.issues-hint { margin: 0 0 0.65rem; padding: 0 0.15rem; }
+.issues-hint span { color: var(--ink-soft); }
+.issues-table { min-width: 920px; }
+.result-cell .result-text {
+    margin-top: 0.25rem;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--ink-soft);
+    text-transform: lowercase;
+}
+.ai-cell { max-width: 280px; font-size: 0.78rem; color: var(--ink-soft); }
 
 .table-wrap {
     overflow-x: auto;

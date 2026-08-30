@@ -29,6 +29,29 @@ def test_max_retries_exceeded_blocked(boundaries_config):
     assert result.reason == "max_retries_exceeded"
 
 
+def test_retry_gap_too_short_blocked(boundaries_config):
+    result = check_action(
+        "retry_strategist",
+        "retry",
+        4500,
+        retry_count=1,
+        minutes_since_last_retry=10,
+    )
+    assert result.allowed is False
+    assert result.reason == "retry_gap_too_short"
+
+
+def test_retry_gap_ok_after_30_min(boundaries_config):
+    result = check_action(
+        "retry_strategist",
+        "retry",
+        4500,
+        retry_count=1,
+        minutes_since_last_retry=45,
+    )
+    assert result.allowed is True
+
+
 def test_disabled_engine_blocked(boundaries_config, monkeypatch, tmp_path):
     import json
     from core import boundary_enforcer

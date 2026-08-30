@@ -38,6 +38,79 @@ const COLORS = {
     muted: "#8aa399",
 };
 
+const RECOVERY_ETA = {
+    capture_guardian: {
+        kicker: "Capture Guardian",
+        headline: "Usually minutes",
+        range: "1–30 min",
+        speed: 92,
+        speedLabel: "Very fast",
+        note: "Fastest path — the payment was already authorized on Razorpay.",
+        steps: [
+            "Detect authorized-but-not-captured payments",
+            "Auto-capture within your merchant rules",
+            "Funds settle to the merchant account",
+        ],
+        window: "Window: act inside Razorpay’s capture deadline (~5 days)",
+    },
+    retry_strategist: {
+        kicker: "Retry Strategist",
+        headline: "Minutes to a few hours",
+        range: "5 min – 6 hrs",
+        speed: 78,
+        speedLabel: "Fast",
+        note: "AI retries only transient failures — permanent declines are skipped.",
+        steps: [
+            "Classify failure as retryable vs permanent",
+            "Retry with smart timing / channel",
+            "Confirm success or stop to avoid fees",
+        ],
+        window: "Window: best within hours of the original failure",
+    },
+    dispute_defender: {
+        kicker: "Dispute Defender",
+        headline: "Days to a few weeks",
+        range: "3–21 days",
+        speed: 28,
+        speedLabel: "Slower (network process)",
+        note: "Evidence goes out fast; final outcome depends on the card network.",
+        steps: [
+            "Pull transaction + delivery evidence",
+            "Contest the dispute via Razorpay",
+            "Wait for issuer / network decision",
+        ],
+        window: "Window: contest before the dispute deadline (often ~7–30 days)",
+    },
+    refund_resolver: {
+        kicker: "Refund Resolver",
+        headline: "Hours to a couple of days",
+        range: "2 hrs – 2 days",
+        speed: 55,
+        speedLabel: "Moderate",
+        note: "Clears stuck refunds so they don’t turn into chargebacks.",
+        steps: [
+            "Find refunds stuck pending too long",
+            "Resolve or escalate within rules",
+            "Customer gets funds; dispute risk drops",
+        ],
+        window: "Window: act before the customer files a chargeback",
+    },
+    checkout_rescuer: {
+        kicker: "Checkout Rescuer",
+        headline: "Minutes to 24 hours",
+        range: "5 min – 24 hrs",
+        speed: 68,
+        speedLabel: "Fast if customer responds",
+        note: "Recovery link is sent quickly; money returns when the buyer pays.",
+        steps: [
+            "Detect abandoned checkout with contact info",
+            "Send personalized recovery payment link",
+            "Capture payment when the customer completes",
+        ],
+        window: "Window: best within 24–72 hours of abandon",
+    },
+};
+
 let lastScan = null;
 const charts = {};
 
@@ -122,6 +195,79 @@ function badge(issue) {
     return '<span class="badge badge-none">NO ACTION</span>';
 }
 
+function resultLabel(issue) {
+    const raw = (issue.action_result || "").toString().toLowerCase();
+    if (raw) return raw;
+    if (issue.recovered) return "success";
+    if (issue.pending) return "pending";
+    if (issue.escalated) return "escalated";
+    return "no_action";
+}
+
+function aiCell(issue) {
+    const parts = [];
+    if (issue.ai_classification) {
+        const conf =
+            issue.ai_confidence != null
+                ? ` ${Math.round(Number(issue.ai_confidence) * 100)}%`
+                : "";
+        parts.push(String(issue.ai_classification).toUpperCase() + conf);
+    }
+    if (issue.ai_winnability_score != null && issue.ai_winnability_score !== "") {
+        const score = Number(issue.ai_winnability_score);
+        parts.push(score.toFixed(2) + (score >= 0.6 ? " winnable" : " low-win"));
+    }
+    if (issue.evidence_summary) {
+        parts.push(String(issue.evidence_summary).slice(0, 70));
+    }
+    if (issue.ai_reasoning) {
+        parts.push(String(issue.ai_reasoning).slice(0, 100) + (String(issue.ai_reasoning).length > 100 ? "…" : ""));
+    }
+    if (issue.recovery_message) {
+        parts.push('"' + String(issue.recovery_message).slice(0, 70) + (String(issue.recovery_message).length > 70 ? "…" : "") + '"');
+    }
+    if (issue.diagnosis && !parts.length) {
+        parts.push(String(issue.diagnosis));
+    }
+    // Deterministic Capture Guardian with no AI fields → em dash
+    return parts.length ? parts.join(" — ") : "—";
+}
+
+function renderIssues(engines) {
+    const tbody = document.getElementById("issues-body");
+    const empty = document.getElementById("issues-empty");
+    const wrap = document.getElementById("issues-wrap");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+    let count = 0;
+
+    for (const er of engines) {
+        if (er.skipped) continue;
+        for (const issue of er.issues || []) {
+            count++;
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${ENGINE_NAMES[issue.engine] || issue.engine || ""}</td>
+                <td>${issue.issue_type || ""}</td>
+                <td><code>${issue.razorpay_entity_id || issue.payment_id || "—"}</code></td>
+                <td>${formatINR(issue.amount_inr)}</td>
+                <td>${issue.action_taken || "—"}</td>
+                <td class="result-cell">${badge(issue)}<div class="result-text">${resultLabel(issue)}</div></td>
+                <td class="ai-cell">${aiCell(issue)}</td>
+            `;
+            tbody.appendChild(tr);
+        }
+    }
+
+    if (count) {
+        empty?.classList.add("hidden");
+        wrap?.classList.remove("hidden");
+    } else {
+        empty?.classList.remove("hidden");
+        wrap?.classList.add("hidden");
+    }
+}
+
 function showAuthStep(step) {
     ["auth-choice", "auth-razorpay", "auth-signup"].forEach((id) => {
         document.getElementById(id)?.classList.add("hidden");
@@ -161,7 +307,7 @@ function connectRazorpay(demo) {
         return;
     }
 
-    enterApp({
+    const session = {
         ...existing,
         method: demo ? "demo" : "razorpay",
         businessName: existing.businessName || (demo ? "Demo Merchant" : "Razorpay Merchant"),
@@ -170,7 +316,53 @@ function connectRazorpay(demo) {
         demoMode: !!demo,
         keyId: demo ? null : keyId,
         connectedAt: new Date().toISOString(),
-    });
+    };
+
+    enterApp(session);
+
+    if (demo) {
+        bootstrapDemoSession();
+    }
+}
+
+async function bootstrapDemoSession() {
+    toast("Loading demo dataset…");
+    try {
+        await fetch("/api/reset", { method: "POST" });
+        const seedRes = await fetch("/api/seed", { method: "POST" });
+        if (!seedRes.ok) throw new Error("seed HTTP " + seedRes.status);
+        const seed = await seedRes.json();
+        localStorage.removeItem(SCAN_CACHE_KEY);
+        lastScan = null;
+        clearOverviewMetrics();
+        toast(
+            `Demo ready · ${seed.counts?.payments || 0} payments — click Run scan`,
+            "ok"
+        );
+    } catch (err) {
+        toast("Demo seed failed: " + err.message + " — try Run scan", "err");
+    }
+}
+
+function clearOverviewMetrics() {
+    lastScan = null;
+    setText("home-recovered", "₹0");
+    setText("home-at-risk", "₹0");
+    setText("home-pending", "₹0");
+    setText("home-escalated", "0");
+    setText("home-rate", "0%");
+    setText("home-rate-line", "Run a scan to measure recovery");
+    const badge = document.getElementById("nav-esc-badge");
+    if (badge) {
+        badge.textContent = "0";
+        badge.dataset.count = "0";
+    }
+    document.getElementById("scan-results")?.classList.add("hidden");
+    document.getElementById("issues-wrap")?.classList.add("hidden");
+    document.getElementById("issues-empty")?.classList.remove("hidden");
+    document.getElementById("insights-empty")?.classList.remove("hidden");
+    document.getElementById("insights-body")?.classList.add("hidden");
+    updateStoryRail(false);
 }
 
 function createAccount() {
@@ -230,6 +422,9 @@ function showView(name) {
 
     if ((name === "insights" || name === "home" || name === "scan") && lastScan) {
         setTimeout(() => updateAllCharts(lastScan), 40);
+    }
+    if (name === "rules") {
+        loadRules();
     }
 }
 
@@ -590,47 +785,6 @@ function renderEngines(engines) {
     });
 }
 
-function renderIssues(engines) {
-    const tbody = document.getElementById("issues-body");
-    const empty = document.getElementById("issues-empty");
-    const wrap = document.getElementById("issues-wrap");
-    if (!tbody) return;
-    tbody.innerHTML = "";
-    let count = 0;
-
-    for (const er of engines) {
-        if (er.skipped) continue;
-        for (const issue of er.issues || []) {
-            count++;
-            const ai = [];
-            if (issue.ai_classification) ai.push(issue.ai_classification.toUpperCase());
-            if (issue.ai_winnability_score != null) ai.push("win " + Number(issue.ai_winnability_score).toFixed(2));
-            if (issue.ai_reasoning) ai.push(String(issue.ai_reasoning).slice(0, 90) + "…");
-            if (issue.recovery_message) ai.push('"' + String(issue.recovery_message).slice(0, 60) + '…"');
-
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-                <td>${ENGINE_NAMES[issue.engine] || issue.engine || ""}</td>
-                <td>${issue.issue_type || ""}</td>
-                <td><code>${issue.razorpay_entity_id || issue.payment_id || "—"}</code></td>
-                <td>${formatINR(issue.amount_inr)}</td>
-                <td>${issue.action_taken || "—"}</td>
-                <td>${badge(issue)}</td>
-                <td class="ai-cell">${ai.join(" · ") || "—"}</td>
-            `;
-            tbody.appendChild(tr);
-        }
-    }
-
-    if (count) {
-        empty?.classList.add("hidden");
-        wrap?.classList.remove("hidden");
-    } else {
-        empty?.classList.remove("hidden");
-        wrap?.classList.add("hidden");
-    }
-}
-
 function renderEscalations(engines) {
     const body = document.getElementById("escalations-body");
     if (!body) return;
@@ -701,28 +855,33 @@ async function loadAudit(scanRunId) {
 async function loadRules() {
     const body = document.getElementById("rules-body");
     if (!body) return;
-    try {
-        const cfg = await fetch("/api/boundaries").then((r) => r.json());
+
+    const paint = (cfg) => {
+        const inr = (n) => "₹" + Number(n || 0).toLocaleString("en-IN");
         const engines = [
             ["Capture Guardian", [
-                ["Auto-capture max", "₹" + (cfg.capture_guardian?.auto_capture_threshold_inr || 0).toLocaleString("en-IN")],
+                ["Auto-capture max", inr(cfg.capture_guardian?.auto_capture_threshold_inr)],
                 ["Min age", (cfg.capture_guardian?.min_authorized_age_hours || 0) + " hours"],
             ]],
             ["Retry Strategist", [
-                ["Max retries", cfg.retry_strategist?.max_retries_per_payment],
-                ["Min amount", "₹" + (cfg.retry_strategist?.retry_only_above_inr || 0)],
+                ["Max retries", cfg.retry_strategist?.max_retries_per_payment ?? 2],
+                ["Retry gap", (cfg.retry_strategist?.retry_delay_minutes || 30) + " min"],
+                ["Min amount", inr(cfg.retry_strategist?.retry_only_above_inr)],
             ]],
             ["Dispute Defender", [
-                ["Auto-contest max", "₹" + (cfg.dispute_defender?.auto_contest_threshold_inr || 0).toLocaleString("en-IN")],
-                ["Never auto", (cfg.dispute_defender?.never_auto_contest_categories || []).join(", ")],
+                ["Auto-contest max", inr(cfg.dispute_defender?.auto_contest_threshold_inr)],
+                ["Min winnability", cfg.dispute_defender?.min_winnability_score ?? 0.6],
+                ["Never auto", (cfg.dispute_defender?.never_auto_contest_categories || ["fraud"]).join(", ")],
             ]],
             ["Refund Resolver", [
-                ["Auto-reissue max", "₹" + (cfg.refund_resolver?.auto_reissue_threshold_inr || 0).toLocaleString("en-IN")],
+                ["Auto-reissue max", inr(cfg.refund_resolver?.auto_reissue_threshold_inr)],
                 ["Min pending age", (cfg.refund_resolver?.min_pending_age_days || 0) + " days"],
             ]],
             ["Checkout Rescuer", [
-                ["Min order", "₹" + (cfg.checkout_rescuer?.min_order_amount_inr || 0)],
-                ["Max messages", cfg.checkout_rescuer?.max_recovery_messages_per_order],
+                ["Min order", inr(cfg.checkout_rescuer?.min_order_amount_inr)],
+                ["Wait before send", (cfg.checkout_rescuer?.delay_before_recovery_minutes || 30) + " min"],
+                ["Give up after", (cfg.checkout_rescuer?.give_up_after_hours || 24) + " hours"],
+                ["Max messages", cfg.checkout_rescuer?.max_recovery_messages_per_order ?? 1],
             ]],
         ];
         body.innerHTML = engines
@@ -730,12 +889,32 @@ async function loadRules() {
                 ([title, rows]) => `
             <div class="rule-card">
                 <h4>${title}</h4>
-                <ul>${rows.map(([k, v]) => `<li><strong>${k}:</strong> ${v}</li>`).join("")}</ul>
+                <ul>${rows.map(([k, v]) => `<li><strong>${k}:</strong> ${v ?? "—"}</li>`).join("")}</ul>
             </div>`
             )
             .join("");
-    } catch {
-        body.innerHTML = '<p class="lead">Could not load rules.</p>';
+        body.dataset.rulesState = "live";
+    };
+
+    // Never wipe existing cards to "Loading…" — only show spinner if empty
+    if (!body.querySelector(".rule-card")) {
+        body.innerHTML = '<p class="lead">Loading…</p>';
+    }
+
+    try {
+        const res = await fetch(new URL("/api/boundaries", window.location.origin).toString(), {
+            cache: "no-store",
+        });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const cfg = await res.json();
+        paint(cfg);
+    } catch (err) {
+        // Keep static fallback cards if present; otherwise show error
+        if (!body.querySelector(".rule-card")) {
+            body.innerHTML = `<p class="lead">Could not load rules (${err.message}).</p>`;
+        }
+        body.dataset.rulesState = "fallback";
+        console.warn("loadRules failed, keeping fallback:", err);
     }
 }
 
@@ -790,31 +969,59 @@ async function initAppData() {
     }
 
     loadRules();
-    updateStoryRail(false);
+    // Start at ₹0 — amounts appear only after the user clicks Run scan.
+    // Same demo/credentials always produce the same totals after scan (deterministic).
+    localStorage.removeItem(SCAN_CACHE_KEY);
+    clearOverviewMetrics();
+}
 
-    const cached = loadCachedScan();
-    if (cached?.summary) {
-        lastScan = cached;
-        renderAll(cached);
-        return;
-    }
+function selectRecoveryEta(key) {
+    const data = RECOVERY_ETA[key];
+    if (!data) return;
 
-    try {
-        const dash = await fetch("/api/dashboard").then((r) => r.json());
-        if (dash.has_data && dash.latest_scan) {
-            const s = dash.latest_scan;
-            setText("home-recovered", formatINR(s.total_amount_recovered_inr));
-            setText("home-at-risk", formatINR(s.total_amount_at_risk_inr));
-            setText("home-escalated", s.total_escalations || 0);
-            if (s.id) loadAudit(s.id);
-        }
-    } catch {
-        /* first visit */
+    document.querySelectorAll(".eta-tab").forEach((tab) => {
+        const on = tab.dataset.eta === key;
+        tab.classList.toggle("active", on);
+        tab.setAttribute("aria-selected", on ? "true" : "false");
+    });
+
+    const detail = document.getElementById("eta-detail");
+    if (detail) {
+        detail.classList.add("is-switching");
+        setTimeout(() => {
+            setText("eta-kicker", data.kicker);
+            setText("eta-headline", data.headline);
+            setText("eta-note", data.note);
+            setText("eta-range", data.range);
+            setText("eta-speed-label", data.speedLabel);
+            setText("eta-window-text", data.window);
+
+            const steps = document.getElementById("eta-steps");
+            if (steps) {
+                steps.innerHTML = data.steps.map((s) => `<li>${s}</li>`).join("");
+            }
+
+            const fill = document.getElementById("eta-speed-fill");
+            if (fill) {
+                fill.style.width = "0%";
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        fill.style.width = data.speed + "%";
+                    });
+                });
+            }
+
+            detail.classList.remove("is-switching");
+            refreshIcons(detail);
+        }, 120);
     }
 }
 
 function boot() {
     refreshIcons();
+    selectRecoveryEta("capture_guardian");
+    // Rules must load regardless of auth / scan state
+    loadRules();
     const session = getSession();
     if (session?.razorpayConnected) {
         enterApp(session);
@@ -846,6 +1053,12 @@ document.getElementById("sidebar-nav")?.addEventListener("click", (e) => {
 
 document.querySelectorAll("[data-goto]").forEach((btn) => {
     btn.addEventListener("click", () => showView(btn.dataset.goto));
+});
+
+document.getElementById("eta-tabs")?.addEventListener("click", (e) => {
+    const tab = e.target.closest("[data-eta]");
+    if (!tab) return;
+    selectRecoveryEta(tab.dataset.eta);
 });
 
 document.getElementById("scan-btn")?.addEventListener("click", runScan);

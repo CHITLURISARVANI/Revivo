@@ -40,10 +40,18 @@ def init_db() -> None:
             total_issues_found INTEGER DEFAULT 0,
             total_amount_at_risk_inr REAL DEFAULT 0,
             total_amount_recovered_inr REAL DEFAULT 0,
+            total_amount_pending_inr REAL DEFAULT 0,
             total_escalations INTEGER DEFAULT 0,
             status TEXT DEFAULT 'in_progress'
         )
     """)
+
+    # Migrate older DBs missing pending column
+    cols = {row[1] for row in cursor.execute("PRAGMA table_info(scan_runs)").fetchall()}
+    if "total_amount_pending_inr" not in cols:
+        cursor.execute(
+            "ALTER TABLE scan_runs ADD COLUMN total_amount_pending_inr REAL DEFAULT 0"
+        )
 
     # Issues found during scans
     cursor.execute("""
@@ -114,6 +122,22 @@ def init_db() -> None:
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_audit_scan_run ON audit_entries(scan_run_id)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_audit_entity ON audit_entries(razorpay_entity_id)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_escalations_status ON escalations(status)")
+
+    # Append-only enforcement for audit ledger (UPDATE/DELETE must fail)
+    cursor.execute("""
+        CREATE TRIGGER IF NOT EXISTS audit_entries_no_update
+        BEFORE UPDATE ON audit_entries
+        BEGIN
+            SELECT RAISE(ABORT, 'audit_entries is append-only: UPDATE not allowed');
+        END
+    """)
+    cursor.execute("""
+        CREATE TRIGGER IF NOT EXISTS audit_entries_no_delete
+        BEFORE DELETE ON audit_entries
+        BEGIN
+            SELECT RAISE(ABORT, 'audit_entries is append-only: DELETE not allowed');
+        END
+    """)
 
     conn.commit()
     conn.close()

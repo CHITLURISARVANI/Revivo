@@ -46,12 +46,6 @@ def test_log_is_append_only():
         human_readable="Classified as transient",
     )
 
-    # Application contract: audit is append-only — we never UPDATE via logger.
-    # Verify INSERT works and UPDATE would require raw SQL (not exposed).
-    trail = get_audit_trail("scan-2")
-    assert len(trail) == 1
-    assert trail[0]["id"] == entry_id
-
     # Second log creates a new entry, does not mutate first
     log(
         scan_run_id="scan-2",
@@ -59,6 +53,29 @@ def test_log_is_append_only():
         phase="execute",
         human_readable="Retry link sent",
     )
+    trail = get_audit_trail("scan-2")
+    assert len(trail) == 2
+    assert trail[0]["human_readable"] == "Classified as transient"
+    assert trail[0]["id"] == entry_id
+
+    # DB-level append-only: UPDATE must fail
+    conn = get_connection()
+    with pytest.raises(Exception) as exc:
+        conn.execute(
+            "UPDATE audit_entries SET human_readable = ? WHERE id = ?",
+            ("tampered", entry_id),
+        )
+        conn.commit()
+    conn.close()
+    assert "append-only" in str(exc.value).lower() or "abort" in str(exc.value).lower()
+
+    # DELETE must fail
+    conn = get_connection()
+    with pytest.raises(Exception):
+        conn.execute("DELETE FROM audit_entries WHERE id = ?", (entry_id,))
+        conn.commit()
+    conn.close()
+
     trail = get_audit_trail("scan-2")
     assert len(trail) == 2
     assert trail[0]["human_readable"] == "Classified as transient"

@@ -30,7 +30,7 @@
                     <li><i data-lucide="brain"></i><span>Diagnose with AI — retry only what can win</span></li>
                     <li><i data-lucide="shield-check"></i><span>Act within merchant boundaries + full audit trail</span></li>
                 </ul>
-                <div class="auth-story-foot">Razorpay AI Buildathon 2026 · Track 03</div>
+                <div class="auth-story-foot">Razorpay AI Buildathon 2026 · Track 03 · <span id="build-id-auth">Build 20260830-b6</span></div>
             </aside>
 
             <div class="auth-panel">
@@ -85,6 +85,7 @@
                     <div>
                         <strong>Revivo</strong>
                         <small>Revenue recovery</small>
+                        <span class="build-pill" id="build-id" title="Deployed build">Build b6</span>
                     </div>
                 </div>
                 <nav class="nav" id="sidebar-nav">
@@ -121,6 +122,7 @@
                     </div>
                 </div>
                 <div class="topbar-right">
+                    <span class="build-pill topbar-build" id="build-id-top" title="Deployed build">Build b6</span>
                     <button type="button" class="btn btn-ghost" id="reset-btn"><i data-lucide="rotate-ccw"></i> Reset</button>
                     <button type="button" class="btn btn-primary" id="scan-btn"><i data-lucide="play"></i> Run scan</button>
                 </div>
@@ -207,37 +209,67 @@
                         </article>
                     </div>
 
-                    <div class="panel">
+                    <div class="panel eta-panel">
                         <div class="panel-head">
-                            <h3>Five leak channels</h3>
-                            <span class="hint">Tap an engine to jump to scan</span>
+                            <h3>Typical recovery time</h3>
+                            <span class="hint">Tap a leak type — approx ETA</span>
                         </div>
-                        <div class="leak-cards" id="leak-cards">
-                            <button type="button" class="leak-card" data-goto="scan">
+                        <div class="leak-cards" id="eta-tabs" role="tablist" aria-label="Recovery ETA by leak type">
+                            <button type="button" class="leak-card eta-tab active" role="tab" aria-selected="true" data-eta="capture_guardian">
                                 <i data-lucide="credit-card"></i>
                                 <strong>Capture</strong>
                                 <span>Authorized, never captured</span>
+                                <em class="eta-badge fast">~minutes</em>
                             </button>
-                            <button type="button" class="leak-card" data-goto="scan">
+                            <button type="button" class="leak-card eta-tab" role="tab" aria-selected="false" data-eta="retry_strategist">
                                 <i data-lucide="refresh-cw"></i>
                                 <strong>Retry</strong>
                                 <span>Transient failures ignored</span>
+                                <em class="eta-badge fast">mins–hours</em>
                             </button>
-                            <button type="button" class="leak-card" data-goto="scan">
+                            <button type="button" class="leak-card eta-tab" role="tab" aria-selected="false" data-eta="dispute_defender">
                                 <i data-lucide="scale"></i>
                                 <strong>Dispute</strong>
                                 <span>Evidence exists, never contested</span>
+                                <em class="eta-badge slow">days–weeks</em>
                             </button>
-                            <button type="button" class="leak-card" data-goto="scan">
+                            <button type="button" class="leak-card eta-tab" role="tab" aria-selected="false" data-eta="refund_resolver">
                                 <i data-lucide="banknote"></i>
                                 <strong>Refund</strong>
                                 <span>Stuck refunds → chargebacks</span>
+                                <em class="eta-badge mid">hours–days</em>
                             </button>
-                            <button type="button" class="leak-card" data-goto="scan">
+                            <button type="button" class="leak-card eta-tab" role="tab" aria-selected="false" data-eta="checkout_rescuer">
                                 <i data-lucide="shopping-cart"></i>
                                 <strong>Checkout</strong>
                                 <span>Abandoned with contact info</span>
+                                <em class="eta-badge mid">mins–24h</em>
                             </button>
+                        </div>
+                        <div class="eta-detail" id="eta-detail" role="tabpanel">
+                            <div class="eta-detail-top">
+                                <div>
+                                    <p class="kicker" id="eta-kicker">Capture Guardian</p>
+                                    <h4 id="eta-headline">Usually minutes</h4>
+                                    <p class="lead" id="eta-note">Fastest path — money was already authorized on Razorpay.</p>
+                                </div>
+                                <div class="eta-range" id="eta-range">1–30 min</div>
+                            </div>
+                            <div class="eta-speed">
+                                <div class="eta-speed-labels">
+                                    <span>Speed</span>
+                                    <span id="eta-speed-label">Very fast</span>
+                                </div>
+                                <div class="eta-speed-track" aria-hidden="true">
+                                    <div class="eta-speed-fill" id="eta-speed-fill" style="width: 92%"></div>
+                                </div>
+                            </div>
+                            <ol class="eta-steps" id="eta-steps">
+                                <li>Detect authorized-but-not-captured payments</li>
+                                <li>Auto-capture within your merchant rules</li>
+                                <li>Funds settle to the merchant account</li>
+                            </ol>
+                            <p class="eta-window" id="eta-window"><i data-lucide="timer"></i> <span id="eta-window-text">Window: act inside Razorpay’s capture deadline (~5 days)</span></p>
                         </div>
                     </div>
                 </section>
@@ -370,7 +402,8 @@
                             <p>Scan first to populate this table.</p>
                         </div>
                         <div class="table-wrap hidden" id="issues-wrap">
-                            <table>
+                            <p class="hint issues-hint">Columns: Engine · Issue · ID · Amount · Action · Result · AI <span>(scroll right on small screens)</span></p>
+                            <table class="issues-table">
                                 <thead>
                                     <tr>
                                         <th>Engine</th>
@@ -405,7 +438,7 @@
                 <!-- AUDIT -->
                 <section class="view" id="view-audit">
                     <article class="panel">
-                        <p class="lead">Append-only trail — detect → diagnose → decide → execute.</p>
+                        <p class="lead">Append-only trail — detect → diagnose → decide → execute. Demo mode appends <code>[SIMULATED]</code> on execute steps; live Razorpay calls omit that tag.</p>
                         <div id="audit-trail" class="audit-list">
                             <div class="empty-state" id="audit-empty">
                                 <i data-lucide="scroll-text"></i>
@@ -453,7 +486,47 @@
                             <h3>Merchant boundaries</h3>
                             <span class="hint">From boundaries.json</span>
                         </div>
-                        <div id="rules-body" class="rules-grid"><p class="lead">Loading…</p></div>
+                        <div id="rules-body" class="rules-grid" data-rules-state="static">
+                            <div class="rule-card">
+                                <h4>Capture Guardian</h4>
+                                <ul>
+                                    <li><strong>Auto-capture max:</strong> ₹50,000</li>
+                                    <li><strong>Min age:</strong> 6 hours</li>
+                                </ul>
+                            </div>
+                            <div class="rule-card">
+                                <h4>Retry Strategist</h4>
+                                <ul>
+                                    <li><strong>Max retries:</strong> 2</li>
+                                    <li><strong>Retry gap:</strong> 30 min</li>
+                                    <li><strong>Min amount:</strong> ₹100</li>
+                                </ul>
+                            </div>
+                            <div class="rule-card">
+                                <h4>Dispute Defender</h4>
+                                <ul>
+                                    <li><strong>Auto-contest max:</strong> ₹25,000</li>
+                                    <li><strong>Min winnability:</strong> 0.6</li>
+                                    <li><strong>Never auto:</strong> fraud</li>
+                                </ul>
+                            </div>
+                            <div class="rule-card">
+                                <h4>Refund Resolver</h4>
+                                <ul>
+                                    <li><strong>Auto-reissue max:</strong> ₹10,000</li>
+                                    <li><strong>Min pending age:</strong> 7 days</li>
+                                </ul>
+                            </div>
+                            <div class="rule-card">
+                                <h4>Checkout Rescuer</h4>
+                                <ul>
+                                    <li><strong>Min order:</strong> ₹500</li>
+                                    <li><strong>Wait before send:</strong> 30 min</li>
+                                    <li><strong>Give up after:</strong> 24 hours</li>
+                                    <li><strong>Max messages:</strong> 1</li>
+                                </ul>
+                            </div>
+                        </div>
                     </article>
                 </section>
             </div>

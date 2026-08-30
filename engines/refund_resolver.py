@@ -164,6 +164,7 @@ class RefundResolver:
                 "razorpay_entity_id": refund_id,
                 "amount_inr": amount,
                 "diagnosis": diagnosis["diagnosis"],
+                "ai_reasoning": diagnosis.get("reason", "Stuck refund above auto-reissue threshold"),
                 "action_taken": "escalated",
                 "action_result": "blocked",
                 "escalated": True,
@@ -197,6 +198,10 @@ class RefundResolver:
             "razorpay_entity_id": refund_id,
             "amount_inr": amount,
             "diagnosis": diagnosis["diagnosis"],
+            "ai_reasoning": diagnosis.get(
+                "reason",
+                "Stuck pending refund — customer card expired; instant reissue",
+            ),
             "action_taken": "instant_refund_issued",
             "action_result": "success" if processed else "failed",
             "amount_recovered_inr": amount if processed else 0,

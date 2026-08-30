@@ -8,6 +8,8 @@ from ai.classifier import classify_failure
 from ai.message_gen import generate_recovery_message
 from core.audit_logger import log as audit_log
 from core.boundary_enforcer import check_action
+from core.issue_store import get_retry_history
+from core.demo_clock import client_is_simulated
 
 
 class RetryStrategist:
@@ -111,8 +113,20 @@ class RetryStrategist:
                 "recovered": False,
             }
 
-        # Check boundaries for retry
-        boundary = check_action("retry_strategist", "retry", amount, retry_count=0)
+        # Check boundaries for retry (max 2 + 30-min gap)
+        # Simulated mode: only count retries inside THIS scan so repeated scans
+        # on the same seed stay identical (server-side shared DB, idempotent demo).
+        history_scan_id = self.scan_run_id if client_is_simulated(self.razorpay) else None
+        history = get_retry_history(payment_id, scan_run_id=history_scan_id)
+        retry_count = history["retry_count"]
+        minutes_since = history["minutes_since_last_retry"]
+        boundary = check_action(
+            "retry_strategist",
+            "retry",
+            amount,
+            retry_count=retry_count,
+            minutes_since_last_retry=minutes_since,
+        )
 
         if not boundary.allowed:
             audit_log(
@@ -122,8 +136,9 @@ class RetryStrategist:
                 razorpay_entity_id=payment_id,
                 amount_inr=amount,
                 boundary_check=boundary.reason,
-                action_taken="escalated",
-                human_readable=f"⚠️ Escalated: {boundary.reason}",
+                action_taken="escalated" if boundary.escalate else "blocked",
+                human_readable=f"⚠️ {'Escalated' if boundary.escalate else 'Blocked'}: {boundary.reason}"
+                + (f" (retries={retry_count})" if retry_count else ""),
             )
             return {
                 "issue_id": str(uuid.uuid4()),
@@ -132,9 +147,12 @@ class RetryStrategist:
                 "razorpay_entity_id": payment_id,
                 "amount_inr": amount,
                 "ai_classification": classification,
-                "action_taken": "escalated",
+                "ai_confidence": confidence,
+                "ai_reasoning": reasoning,
+                "action_taken": "escalated" if boundary.escalate else "blocked",
                 "action_result": "blocked",
-                "escalated": True,
+                "retry_count": retry_count,
+                "escalated": bool(boundary.escalate),
                 "recovered": False,
             }
 
@@ -185,6 +203,7 @@ class RetryStrategist:
             "amount_pending_inr": amount,
             "recovery_link": link_url,
             "recovery_message": message_result.get("message", ""),
+            "retry_count": retry_count + 1,
             "escalated": False,
             "recovered": False,
             "pending": True,

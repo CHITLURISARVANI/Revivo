@@ -84,9 +84,20 @@ def _score_with_llm(dispute_data: dict, api_key: str) -> dict:
 def _score_with_rules(dispute_data: dict) -> dict:
     """Rules-based winnability scoring."""
     reason = (dispute_data.get("reason_code") or dispute_data.get("dispute_reason") or dispute_data.get("reason") or "").lower()
-    evidence = dispute_data.get("available_evidence", {})
-    has_tracking = evidence.get("has_tracking_number", False)
-    is_recurring = evidence.get("is_recurring_payment", False)
+    evidence = dispute_data.get("available_evidence", {}) or {}
+    has_tracking = bool(
+        evidence.get("has_tracking_number")
+        or dispute_data.get("has_tracking_number")
+        or dispute_data.get("tracking_number")
+    )
+    is_recurring = bool(
+        evidence.get("is_recurring_payment")
+        or dispute_data.get("is_recurring_payment")
+    )
+    has_comms = bool(
+        evidence.get("has_communication_log")
+        or dispute_data.get("has_communication_log")
+    )
 
     # product_not_received + has tracking = strong case
     if "product_not_received" in reason and has_tracking:
@@ -98,7 +109,7 @@ def _score_with_rules(dispute_data: dict) -> dict:
                         "tracking number with delivery confirmation. This directly contradicts "
                         "the customer's claim. Strong evidence for contesting.",
             "evidence_strength": "strong",
-            "risk_factors": ["No communication log on file"] if not evidence.get("has_communication_log") else [],
+            "risk_factors": ["No communication log on file"] if not has_comms else [],
         }
 
     # fraud = always escalate

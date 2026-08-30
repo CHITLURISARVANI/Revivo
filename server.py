@@ -56,12 +56,44 @@ class EscalationResolve(BaseModel):
 
 # ─── Endpoints ───
 
+ASSET_VERSION = "20260830b6"
+
+
+def _serve_index_html() -> HTMLResponse:
+    """Serve dashboard HTML with cache-busted assets. Rules are baked into HTML."""
+    import re
+
+    index_path = DASHBOARD_DIR / "index.html"
+    if not index_path.exists():
+        return HTMLResponse(
+            content="<h1>Dashboard not found</h1><p>dashboard/index.html missing</p>",
+            status_code=404,
+        )
+    html = index_path.read_text(encoding="utf-8")
+    html = re.sub(
+        r"/static/app\.js(?:\?v=[^\s\"']*)?",
+        f"/static/app.js?v={ASSET_VERSION}",
+        html,
+    )
+    html = re.sub(
+        r"/static/style\.css(?:\?v=[^\s\"']*)?",
+        f"/static/style.css?v={ASSET_VERSION}",
+        html,
+    )
+    return HTMLResponse(
+        content=html,
+        headers={
+            "Cache-Control": "no-store, no-cache, must-revalidate",
+            "Pragma": "no-cache",
+        },
+    )
+
+
 @app.get("/")
 def root():
     """Serve the demo website (new-user landing + live workspace)."""
-    index_path = DASHBOARD_DIR / "index.html"
-    if index_path.exists():
-        return HTMLResponse(content=index_path.read_text(encoding="utf-8"))
+    if DASHBOARD_DIR.exists():
+        return _serve_index_html()
     return JSONResponse({
         "name": "Revivo — AI Revenue Recovery Agent",
         "version": "1.0.0",
@@ -83,6 +115,7 @@ def api_info():
             "GET  /dashboard — website",
             "GET  /health — health check",
             "POST /api/scan — trigger a full scan",
+            "POST /api/seed — refresh synthetic demo dataset",
             "GET  /api/scan/{scan_run_id} — get scan results",
             "GET  /api/issues — list issues",
             "GET  /api/issue/{id} — issue detail",
@@ -116,6 +149,30 @@ def trigger_scan():
     """Trigger a full scan across all enabled engines."""
     result = run_scan()
     return result
+
+
+@app.post("/api/seed")
+def seed_demo_data():
+    """
+    Refresh data/synthetic_payments.json (all 5 leak types).
+    Used by 'Continue with demo data'. Falls back to JSON when Razorpay keys absent.
+    """
+    from scripts.seed_test_data import build_dataset, write_json, seed_razorpay_test_mode
+
+    dataset = build_dataset()
+    path = write_json(dataset)
+    rzp = seed_razorpay_test_mode(dataset)
+    return {
+        "status": "ok",
+        "path": str(path),
+        "razorpay_seed": rzp,
+        "counts": {
+            "payments": len(dataset.get("payments", [])),
+            "disputes": len(dataset.get("disputes", [])),
+            "refunds": len(dataset.get("refunds", [])),
+            "orders": len(dataset.get("orders", [])),
+        },
+    }
 
 
 @app.get("/api/scan/{scan_run_id}")
@@ -219,10 +276,7 @@ def reset_database():
 @app.get("/dashboard", response_class=HTMLResponse)
 def serve_dashboard():
     """Serve the web dashboard."""
-    index_path = DASHBOARD_DIR / "index.html"
-    if index_path.exists():
-        return HTMLResponse(content=index_path.read_text(encoding="utf-8"))
-    return HTMLResponse(content="<h1>Dashboard not found</h1><p>dashboard/index.html missing</p>", status_code=404)
+    return _serve_index_html()
 
 
 if __name__ == "__main__":
