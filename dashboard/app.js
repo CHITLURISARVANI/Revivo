@@ -344,6 +344,30 @@ async function bootstrapDemoSession() {
     }
 }
 
+function updateMoneyStory(summary) {
+    const atRisk = Number(summary?.amount_at_risk_inr || 0);
+    const recovered = Number(summary?.amount_recovered_inr || 0);
+    const el = document.getElementById("money-story");
+    const fill = document.getElementById("money-story-bar-fill");
+    setText("story-at-risk", formatINR(atRisk));
+    setText("story-recovered", formatINR(recovered));
+    if (atRisk > 0 || recovered > 0) {
+        setText(
+            "money-story-caption",
+            `${formatINR(atRisk)} at risk → ${formatINR(recovered)} recovered in one scan`
+        );
+        el?.classList.add("is-live");
+        if (fill) {
+            const pct = atRisk > 0 ? Math.min(100, Math.round((recovered / atRisk) * 100)) : 0;
+            fill.style.width = pct + "%";
+        }
+    } else {
+        setText("money-story-caption", "Run a scan to see at-risk money become recovered revenue");
+        el?.classList.remove("is-live");
+        if (fill) fill.style.width = "0%";
+    }
+}
+
 function clearOverviewMetrics() {
     lastScan = null;
     setText("home-recovered", "₹0");
@@ -352,6 +376,7 @@ function clearOverviewMetrics() {
     setText("home-escalated", "0");
     setText("home-rate", "0%");
     setText("home-rate-line", "Run a scan to measure recovery");
+    updateMoneyStory({});
     const badge = document.getElementById("nav-esc-badge");
     if (badge) {
         badge.textContent = "0";
@@ -735,6 +760,7 @@ function renderAll(data) {
         "home-rate-line",
         rate ? rate + "% of at-risk money recovered or pending" : "Run a scan to measure recovery"
     );
+    updateMoneyStory(s);
 
     setText("stat-scanned", s.payments_scanned || 0);
     setText("stat-issues", s.issues_found || 0);
@@ -931,6 +957,7 @@ async function resetDemo() {
     setText("home-escalated", "0");
     setText("home-rate", "0%");
     setText("home-rate-line", "Run a scan to measure recovery");
+    updateMoneyStory({});
 
     const badge = document.getElementById("nav-esc-badge");
     if (badge) {

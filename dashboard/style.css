@@ -469,6 +469,83 @@ a { color: inherit; text-decoration: none; }
     color: #fff;
 }
 
+/* BEFORE → AFTER MONEY STORY (Overview only) */
+.money-story {
+    background: var(--bg-elevated);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 1.15rem 1.35rem 1.25rem;
+    margin-bottom: 0.85rem;
+    box-shadow: var(--shadow);
+}
+.money-story.is-live {
+    border-color: rgba(15, 138, 75, 0.35);
+    background:
+        linear-gradient(180deg, rgba(15, 138, 75, 0.06) 0%, var(--bg-elevated) 55%);
+}
+.money-story-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 0.65rem;
+}
+.money-story-flow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+.money-story-side {
+    flex: 1 1 140px;
+    min-width: 0;
+}
+.money-story-kicker {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--ink-soft);
+    margin-bottom: 0.2rem;
+}
+.money-story-side strong {
+    display: block;
+    font-size: clamp(1.55rem, 3.2vw, 2.15rem);
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+}
+.money-story-side.before strong { color: var(--risk, #b4452f); }
+.money-story-arrow {
+    flex: 0 0 auto;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--brand);
+    line-height: 1;
+    padding-top: 0.9rem;
+}
+.money-story-caption {
+    margin-top: 0.7rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--ink);
+}
+.money-story-bar {
+    margin-top: 0.75rem;
+    height: 10px;
+    border-radius: 999px;
+    background: rgba(180, 69, 47, 0.18);
+    overflow: hidden;
+}
+.money-story-bar-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #187a45, #0f8a4b);
+    transition: width 0.9s var(--ease, ease);
+}
+
 /* CARDS */
 .panel {
     background: var(--bg-elevated);
