@@ -1,4 +1,4 @@
-# PRD — Reclaim: AI Revenue Recovery Agent
+# PRD — Revivo: AI Revenue Recovery Agent
 
 > **Razorpay AI Buildathon 2026 — Track 3: AI Revenue Recovery**
 > Spec-driven development. This document is the product contract. Code implements this contract. Tests verify it.
@@ -17,7 +17,7 @@ The problem isn't that the data is missing — Razorpay's APIs expose every paym
 
 ## 3. Solution Overview
 
-Reclaim is an AI agent that runs a **detect → diagnose → intervene → report** loop against a merchant's Razorpay account via Test Mode APIs:
+Revivo is an AI agent that runs a **detect → diagnose → intervene → report** loop against a merchant's Razorpay account via Test Mode APIs:
 
 1. **Detect**: Scan payments, orders, disputes, and refunds via Razorpay APIs to find revenue at risk across 5 leak types
 2. **Diagnose**: Classify each leak, determine root cause, assess recoverability

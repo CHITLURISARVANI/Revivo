@@ -18,7 +18,7 @@ def test_scan_runs_table_exists():
 
 def test_db_path_uses_env(monkeypatch, tmp_path):
     path = tmp_path / "custom.db"
-    monkeypatch.setenv("RECLAIM_DB_PATH", str(path))
+    monkeypatch.setenv("Revivo_DB_PATH", str(path))
     assert get_db_path() == str(path)
 
 

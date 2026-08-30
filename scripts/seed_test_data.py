@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Seed synthetic test data for Reclaim demo.
+Seed synthetic test data for Revivo demo.
 
 - Always writes/refreshes data/synthetic_payments.json (50 entities, all 5 leak types)
 - If RAZORPAY_KEY_ID + RAZORPAY_KEY_SECRET are set, also creates sample
@@ -242,7 +242,7 @@ def seed_razorpay_test_mode(dataset: dict) -> dict:
 
 
 def main():
-    print("Reclaim — Synthetic Test Data Seeder")
+    print("Revivo — Synthetic Test Data Seeder")
     print("=" * 50)
 
     dataset = build_dataset()

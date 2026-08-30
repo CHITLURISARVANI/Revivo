@@ -1,4 +1,4 @@
-# Test Strategy — Reclaim: AI Revenue Recovery Agent
+# Test Strategy — Revivo: AI Revenue Recovery Agent
 
 > Testing pyramid, coverage targets, and specific test cases.
 > Informed by [api-spec.yaml](./api-spec.yaml), [data-model.md](./data-model.md), and [architecture.md](./architecture.md).

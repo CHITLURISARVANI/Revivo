@@ -1,5 +1,5 @@
 """
-Reclaim — AI Revenue Recovery Agent
+Revivo — AI Revenue Recovery Agent
 FastAPI server with all endpoints.
 
 Run: python server.py
@@ -31,7 +31,7 @@ from core.issue_store import (
 # Initialize DB on startup
 init_db()
 
-app = FastAPI(title="Reclaim — AI Revenue Recovery Agent", version="1.0.0")
+app = FastAPI(title="Revivo — AI Revenue Recovery Agent", version="1.0.0")
 
 # Serve dashboard files
 DASHBOARD_DIR = Path(__file__).parent / "dashboard"
@@ -63,7 +63,7 @@ def root():
     if index_path.exists():
         return HTMLResponse(content=index_path.read_text(encoding="utf-8"))
     return JSONResponse({
-        "name": "Reclaim — AI Revenue Recovery Agent",
+        "name": "Revivo — AI Revenue Recovery Agent",
         "version": "1.0.0",
         "message": "Dashboard missing. Open /docs for API.",
     })
@@ -73,7 +73,7 @@ def root():
 def api_info():
     """Service / API info."""
     return {
-        "name": "Reclaim — AI Revenue Recovery Agent",
+        "name": "Revivo — AI Revenue Recovery Agent",
         "version": "1.0.0",
         "tagline": "Find money merchants don't know they're losing — and recover it.",
         "website": "/",
@@ -233,7 +233,7 @@ if __name__ == "__main__":
         except Exception:
             pass
     print("╔══════════════════════════════════════════════════════════════╗")
-    print("║  Reclaim — AI Revenue Recovery Agent                         ║")
+    print("║  Revivo — AI Revenue Recovery Agent                         ║")
     print("║  Razorpay AI Buildathon 2026 — Track 03                     ║")
     print("╠══════════════════════════════════════════════════════════════╣")
     print("║  Dashboard: http://localhost:8000/dashboard                  ║")

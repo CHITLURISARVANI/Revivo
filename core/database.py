@@ -1,5 +1,5 @@
 """
-Database layer for Reclaim — AI Revenue Recovery Agent.
+Database layer for Revivo — AI Revenue Recovery Agent.
 SQLite-based, schema auto-initialized on first run.
 """
 
@@ -8,13 +8,13 @@ import os
 from typing import Optional
 
 _DEFAULT_DB_PATH = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "reclaim.db"
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "Revivo.db"
 )
 
 
 def get_db_path() -> str:
-    """Resolve DB path (override with RECLAIM_DB_PATH for tests)."""
-    return os.environ.get("RECLAIM_DB_PATH", _DEFAULT_DB_PATH)
+    """Resolve DB path (override with Revivo_DB_PATH for tests)."""
+    return os.environ.get("Revivo_DB_PATH", _DEFAULT_DB_PATH)
 
 
 def get_connection() -> sqlite3.Connection:

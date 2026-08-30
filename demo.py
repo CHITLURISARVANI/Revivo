@@ -1,5 +1,5 @@
 """
-Reclaim — End-to-End Demo
+Revivo — End-to-End Demo
 Run: python demo.py
 """
 
@@ -24,7 +24,7 @@ from core.database import reset_db
 def print_banner():
     print()
     print("╔══════════════════════════════════════════════════════════════════════╗")
-    print("║  RECLAIM — AI Revenue Recovery Agent                                 ║")
+    print("║  Revivo — AI Revenue Recovery Agent                                 ║")
     print("║  Razorpay AI Buildathon 2026 — Track 03 (AI Revenue Recovery)        ║")
     print("╚══════════════════════════════════════════════════════════════════════╝")
     print()
@@ -149,7 +149,7 @@ def main():
     print("  Dashboard: python server.py → http://localhost:8000/dashboard")
     print("═" * 70)
     print()
-    print("  Reclaim — \"Payout.app found money consumers didn't know they were owed.")
+    print("  Revivo — \"Payout.app found money consumers didn't know they were owed.")
     print("  We built the same thing for merchants — and autonomously recover it.")
     print("  Through Razorpay APIs. Within bounds. With full audit trail.\"")
     print()

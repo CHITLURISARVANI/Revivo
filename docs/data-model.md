@@ -1,4 +1,4 @@
-# Data Model — Reclaim: AI Revenue Recovery Agent
+# Data Model — Revivo: AI Revenue Recovery Agent
 
 > Internal data structures, session storage, and query patterns.
 > Informed by [api-spec.yaml](./api-spec.yaml) and [architecture.md](./architecture.md).

@@ -1,4 +1,4 @@
-# Architecture — Reclaim: AI Revenue Recovery Agent
+# Architecture — Revivo: AI Revenue Recovery Agent
 
 > System design for the detect → diagnose → intervene → report pipeline.
 > Informed by [PRD.md](./PRD.md). All requirements trace back to FR/NFR IDs.
@@ -9,7 +9,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                          Reclaim Agent System                            │
+│                          Revivo Agent System                            │
 │                                                                         │
 │  ┌──────────┐    ┌──────────────┐    ┌──────────────┐    ┌───────────┐ │
 │  │  FastAPI  │───▶│  Scan Engine │───▶│  Diagnose    │───▶│ Intervene │ │
@@ -230,7 +230,7 @@ Token bucket rate limiter shared across all Razorpay API calls. 8 tokens/sec (sa
 ## 6. File Structure
 
 ```
-Reclaim/
+Revivo/
 ├── docs/
 │   ├── PRD.md
 │   ├── architecture.md        ← this file

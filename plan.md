@@ -1,6 +1,6 @@
-# Reclaim — AI Revenue Recovery Agent
+# Revivo — AI Revenue Recovery Agent
 
-> **Payout.app finds money consumers are owed. Reclaim finds money merchants are owed — and autonomously recovers it through Razorpay APIs.**
+> **Payout.app finds money consumers are owed. Revivo finds money merchants are owed — and autonomously recovers it through Razorpay APIs.**
 >
 > Built for Razorpay AI Buildathon 2026 — Track 03 (AI Revenue Recovery)
 
@@ -60,7 +60,7 @@ A customer creates an order for ₹7,800, enters their email and phone, reaches 
 
 ## 2. Solution Overview
 
-**Reclaim** is an AI agent that plugs into a merchant's Razorpay account and autonomously:
+**Revivo** is an AI agent that plugs into a merchant's Razorpay account and autonomously:
 
 1. **Detects** revenue at risk across all 5 leak categories
 2. **Diagnoses** the root cause of each leak (transient failure? permanent? winnable dispute?)
@@ -777,7 +777,7 @@ CREATE INDEX idx_escalations_status ON escalations(status);
 
 ## 10. API Specification
 
-### Reclaim's Own API (FastAPI endpoints)
+### Revivo's Own API (FastAPI endpoints)
 
 #### `GET /api/scan` — Trigger a full scan
 
@@ -894,7 +894,7 @@ Aggregated data for the dashboard: total recovered, pending issues, escalations,
 ## 11. File Structure
 
 ```
-Reclaim/
+Revivo/
 ├── data/
 │   ├── boundaries.json              # Merchant boundary configuration
 │   └── synthetic_payments.json      # 50 synthetic test payments for demo
@@ -995,7 +995,7 @@ print("Razorpay SDK loaded")
 **Objective:** Thin wrapper around Razorpay SDK with consistent error handling.
 
 **Files:**
-- `razorpay_client/client.py`: Methods for each API call Reclaim needs
+- `razorpay_client/client.py`: Methods for each API call Revivo needs
 - `tests/test_razorpay_client.py`: Mock-based tests (don't hit real API in unit tests)
 
 **Methods:**
@@ -1292,7 +1292,7 @@ class RazorpayClient:
 - `dashboard/app.js`: Vanilla JS, fetch API
 
 **Sections:**
-1. **Header:** Reclaim logo + "Scan Now" button
+1. **Header:** Revivo logo + "Scan Now" button
 2. **Scorecard:** Total scanned, issues found, amount at risk, amount recovered, escalations
 3. **Issues table:** Engine, issue type, amount, status, action taken, amount recovered
 4. **Escalations panel:** Pending escalations with approve/dismiss buttons
@@ -1337,7 +1337,7 @@ class RazorpayClient:
 **Output:**
 ```
 ╔══════════════════════════════════════════════════════════════════╗
-║  RECLAIM — AI Revenue Recovery Agent                              ║
+║  Revivo — AI Revenue Recovery Agent                              ║
 ║  Razorpay AI Buildathon 2026 — Track 03                          ║
 ╚══════════════════════════════════════════════════════════════════╝
 
@@ -1441,7 +1441,7 @@ Scanning 50 payments across 5 engines...
 "Merchants processing ₹50L/month through Razorpay lose ₹1L+ to 5 silent revenue leaks. Money that's already theirs — leaking through cracks they don't have time to check. Authorized payments never captured. Failed payments never retried. Disputes never contested. Refunds stuck. Checkouts abandoned."
 
 **0:30-1:00 — Setup**
-"Reclaim plugs into the merchant's Razorpay account and scans 50 payments. Dashboard shows: ₹1,24,500 at risk across 7 issues."
+"Revivo plugs into the merchant's Razorpay account and scans 50 payments. Dashboard shows: ₹1,24,500 at risk across 7 issues."
 
 **1:00-2:30 — Live Recovery**
 Run `python demo.py` or trigger scan from dashboard:
@@ -1458,7 +1458,7 @@ Run `python demo.py` or trigger scan from dashboard:
 Show system diagram. Explain: orchestrator → engines → AI reasoning layer → boundary enforcer → Razorpay client. Highlight: every action goes through boundary enforcer first. Every action logged in audit trail.
 
 **4:00-5:00 — Vision**
-"Payout.app found money consumers didn't know they were owed. Reclaim finds money merchants don't know they're losing — and gets it back. Autonomously. Within bounds. With full audit trail. This isn't a dashboard. It's an agent that takes action."
+"Payout.app found money consumers didn't know they were owed. Revivo finds money merchants don't know they're losing — and gets it back. Autonomously. Within bounds. With full audit trail. This isn't a dashboard. It's an agent that takes action."
 
 ---
 

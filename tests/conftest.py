@@ -1,4 +1,4 @@
-"""Pytest fixtures for Reclaim tests — isolated temp DB per session."""
+"""Pytest fixtures for Revivo tests — isolated temp DB per session."""
 
 import os
 import sys
@@ -13,8 +13,8 @@ sys.path.insert(0, str(ROOT))
 @pytest.fixture(autouse=True)
 def _isolated_db(tmp_path, monkeypatch):
     """Each test gets a fresh SQLite DB."""
-    db_path = tmp_path / "test_reclaim.db"
-    monkeypatch.setenv("RECLAIM_DB_PATH", str(db_path))
+    db_path = tmp_path / "test_Revivo.db"
+    monkeypatch.setenv("Revivo_DB_PATH", str(db_path))
     # Clear any cached modules that might hold old path — force re-init
     from core.database import init_db, reset_db
     reset_db()

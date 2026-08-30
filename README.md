@@ -1,6 +1,6 @@
-# Reclaim — AI Revenue Recovery Agent
+# Revivo — AI Revenue Recovery Agent
 
-> **Payout.app found money consumers didn't know they were owed. Reclaim finds money merchants don't know they're losing — and autonomously recovers it through Razorpay APIs.**
+> **Payout.app found money consumers didn't know they were owed. Revivo finds money merchants don't know they're losing — and autonomously recovers it through Razorpay APIs.**
 >
 > Built for Razorpay AI Buildathon 2026 — Track 03 (AI Revenue Recovery)
 
@@ -16,7 +16,7 @@ Merchants lose 1-3% of gross revenue to 5 silent leaks they never check:
 
 ## The Solution
 
-Reclaim is an AI agent with 5 engines that plugs into a merchant's Razorpay account and autonomously:
+Revivo is an AI agent with 5 engines that plugs into a merchant's Razorpay account and autonomously:
 
 1. **Detects** revenue at risk by scanning payments, disputes, refunds, and orders
 2. **Diagnoses** root causes using AI (transient vs permanent failure, dispute winnability)
@@ -128,7 +128,7 @@ Merchant Dashboard → FastAPI → Orchestrator
 
 ## The One-Liner
 
-> **"Payout.app found money consumers didn't know they were owed. Reclaim finds money merchants don't know they're losing — and autonomously recovers it through Razorpay APIs."**
+> **"Payout.app found money consumers didn't know they were owed. Revivo finds money merchants don't know they're losing — and autonomously recovers it through Razorpay APIs."**
 
 ## Tech Stack
 

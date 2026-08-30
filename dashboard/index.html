@@ -3,318 +3,464 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reclaim</title>
+    <title>Revivo — Revenue Recovery</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://unpkg.com/lucide@0.469.0"></script>
 </head>
 <body>
-    <!-- AUTH GATE (shown before app) -->
+    <!-- Toast -->
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <!-- AUTH -->
     <div id="auth-gate" class="auth-gate">
-        <div class="auth-shell">
-            <div class="auth-brand">
-                <p class="auth-logo">Reclaim</p>
-                <p class="auth-tag">AI revenue recovery for Razorpay merchants</p>
-            </div>
+        <div class="auth-layout">
+            <aside class="auth-story">
+                <div class="auth-story-brand">
+                    <span class="mark">R</span>
+                    <span>Revivo</span>
+                </div>
+                <h1>Find the revenue<br>you’re already owed.</h1>
+                <p>An AI agent that plugs into Razorpay, detects five silent leaks, and recovers money within your rules.</p>
+                <ul class="auth-bullets">
+                    <li><i data-lucide="scan-search"></i><span>Detect leaks across payments, disputes, refunds, checkouts</span></li>
+                    <li><i data-lucide="brain"></i><span>Diagnose with AI — retry only what can win</span></li>
+                    <li><i data-lucide="shield-check"></i><span>Act within merchant boundaries + full audit trail</span></li>
+                </ul>
+                <div class="auth-story-foot">Razorpay AI Buildathon 2026 · Track 03</div>
+            </aside>
 
-            <!-- STEP 1: choose path -->
-            <div id="auth-choice" class="auth-card">
-                <h1>Get started</h1>
-                <p class="auth-lead">Best for this product: connect the Razorpay account you already use. Create account is only if you are new to Reclaim.</p>
+            <div class="auth-panel">
+                <div id="auth-choice" class="auth-card">
+                    <p class="kicker">Get started</p>
+                    <h2>Connect your merchant account</h2>
+                    <p class="lead">Recommended: connect Razorpay first — that’s where the money lives.</p>
 
-                <button type="button" class="btn btn-primary btn-block" id="btn-razorpay-path">
-                    Connect with Razorpay
-                    <span class="btn-note">Recommended</span>
-                </button>
-                <button type="button" class="btn btn-ghost btn-block" id="btn-signup-path">
-                    Create account
-                </button>
-                <p class="auth-why">
-                    <strong>Why Razorpay first?</strong>
-                    Reclaim needs your payments data. Merchants already have Razorpay — no separate signup friction for the demo pitch.
-                </p>
-            </div>
+                    <button type="button" class="btn btn-primary btn-block" id="btn-razorpay-path">
+                        <i data-lucide="link-2"></i>
+                        Connect with Razorpay
+                        <span class="chip">Recommended</span>
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-block" id="btn-signup-path">
+                        <i data-lucide="user-plus"></i>
+                        Create account
+                    </button>
+                </div>
 
-            <!-- STEP 2A: Connect Razorpay -->
-            <div id="auth-razorpay" class="auth-card hidden">
-                <button type="button" class="auth-back" id="back-from-rzp">← Back</button>
-                <h1>Connect Razorpay</h1>
-                <p class="auth-lead">Paste test API keys, or continue with demo data (no keys).</p>
-                <label class="field">
-                    <span>Key ID</span>
-                    <input type="text" id="rzp-key-id" placeholder="rzp_test_…" autocomplete="off">
-                </label>
-                <label class="field">
-                    <span>Key Secret</span>
-                    <input type="password" id="rzp-key-secret" placeholder="••••••••" autocomplete="off">
-                </label>
-                <button type="button" class="btn btn-primary btn-block" id="btn-connect-rzp">Connect &amp; open app</button>
-                <button type="button" class="btn btn-ghost btn-block" id="btn-demo-mode">Continue with demo data</button>
-                <p class="auth-fine">Keys stay in this browser only for the demo. Production would use secure OAuth / vault.</p>
-            </div>
+                <div id="auth-razorpay" class="auth-card hidden">
+                    <button type="button" class="link-back" id="back-from-rzp"><i data-lucide="arrow-left"></i> Back</button>
+                    <p class="kicker">Connect</p>
+                    <h2>Razorpay credentials</h2>
+                    <p class="lead">Use test keys, or continue with demo data for the pitch.</p>
+                    <label class="field"><span>Key ID</span><input id="rzp-key-id" type="text" placeholder="rzp_test_…" autocomplete="off"></label>
+                    <label class="field"><span>Key Secret</span><input id="rzp-key-secret" type="password" placeholder="••••••••" autocomplete="off"></label>
+                    <button type="button" class="btn btn-primary btn-block" id="btn-connect-rzp"><i data-lucide="plug"></i> Connect & open app</button>
+                    <button type="button" class="btn btn-secondary btn-block" id="btn-demo-mode"><i data-lucide="play"></i> Continue with demo data</button>
+                    <p class="fine">Demo session stays in this browser. Backend uses simulated data unless `.env` keys are set.</p>
+                </div>
 
-            <!-- STEP 2B: Create account -->
-            <div id="auth-signup" class="auth-card hidden">
-                <button type="button" class="auth-back" id="back-from-signup">← Back</button>
-                <h1>Create account</h1>
-                <p class="auth-lead">Then you will still connect Razorpay — that is where the money lives.</p>
-                <label class="field">
-                    <span>Business name</span>
-                    <input type="text" id="su-name" placeholder="Your store name">
-                </label>
-                <label class="field">
-                    <span>Work email</span>
-                    <input type="email" id="su-email" placeholder="you@business.com">
-                </label>
-                <label class="field">
-                    <span>Password</span>
-                    <input type="password" id="su-pass" placeholder="Min 6 characters">
-                </label>
-                <button type="button" class="btn btn-primary btn-block" id="btn-create-account">Create account</button>
-                <p class="auth-fine">Demo only — saved in this browser, not a real backend auth.</p>
+                <div id="auth-signup" class="auth-card hidden">
+                    <button type="button" class="link-back" id="back-from-signup"><i data-lucide="arrow-left"></i> Back</button>
+                    <p class="kicker">New merchant</p>
+                    <h2>Create your workspace</h2>
+                    <p class="lead">You’ll connect Razorpay next.</p>
+                    <label class="field"><span>Business name</span><input id="su-name" type="text" placeholder="Acme Store"></label>
+                    <label class="field"><span>Work email</span><input id="su-email" type="email" placeholder="you@business.com"></label>
+                    <label class="field"><span>Password</span><input id="su-pass" type="password" placeholder="Min 6 characters"></label>
+                    <button type="button" class="btn btn-primary btn-block" id="btn-create-account"><i data-lucide="check"></i> Create account</button>
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="app hidden" id="app-shell">
-        <!-- SIDEBAR -->
+    <!-- APP -->
+    <div id="app-shell" class="app hidden">
         <aside class="sidebar">
-            <div class="sidebar-brand">
-                <span class="logo">Reclaim</span>
-                <span class="logo-sub">Revenue recovery</span>
+            <div class="sidebar-top">
+                <div class="brand">
+                    <span class="mark">R</span>
+                    <div>
+                        <strong>Revivo</strong>
+                        <small>Revenue recovery</small>
+                    </div>
+                </div>
+                <nav class="nav" id="sidebar-nav">
+                    <button class="nav-item active" data-view="home"><i data-lucide="layout-dashboard"></i> Overview</button>
+                    <button class="nav-item" data-view="scan"><i data-lucide="radar"></i> Scan</button>
+                    <button class="nav-item" data-view="insights"><i data-lucide="line-chart"></i> Insights</button>
+                    <button class="nav-item" data-view="issues"><i data-lucide="list-checks"></i> Issues</button>
+                    <button class="nav-item" data-view="escalations"><i data-lucide="alert-triangle"></i> Escalations <span class="nav-badge" id="nav-esc-badge">0</span></button>
+                    <button class="nav-item" data-view="audit"><i data-lucide="scroll-text"></i> Audit</button>
+                    <div class="nav-divider"></div>
+                    <button class="nav-item" data-view="architecture"><i data-lucide="network"></i> Architecture</button>
+                    <button class="nav-item" data-view="rules"><i data-lucide="sliders-horizontal"></i> Rules</button>
+                </nav>
             </div>
-            <nav class="sidebar-nav" id="sidebar-nav">
-                <button type="button" class="nav-item active" data-view="home">Home</button>
-                <button type="button" class="nav-item" data-view="scan">Run scan</button>
-                <button type="button" class="nav-item" data-view="issues">Issues</button>
-                <button type="button" class="nav-item" data-view="escalations">Escalations</button>
-                <button type="button" class="nav-item" data-view="audit">Audit trail</button>
-                <button type="button" class="nav-item" data-view="architecture">Architecture</button>
-                <button type="button" class="nav-item" data-view="rules">Your rules</button>
-            </nav>
-            <div class="sidebar-foot">
-                <p id="merchant-name" class="merchant-name">—</p>
-                <p id="mode-indicator">Mode: …</p>
-                <p class="sidebar-hint">Razorpay Buildathon · Track 03</p>
-                <button type="button" class="btn-logout" id="logout-btn">Log out</button>
+            <div class="sidebar-bottom">
+                <div class="merchant-chip">
+                    <div class="avatar" id="merchant-avatar">M</div>
+                    <div>
+                        <strong id="merchant-name">Merchant</strong>
+                        <small id="mode-indicator">Mode: …</small>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-ghost btn-block" id="logout-btn"><i data-lucide="log-out"></i> Log out</button>
             </div>
         </aside>
-        <!-- MAIN -->
-        <main class="main">
+
+        <div class="workspace">
             <header class="topbar">
-                <div>
-                    <h1 class="page-title" id="page-title">Home</h1>
-                    <p class="page-desc" id="page-desc">Welcome — recover revenue leaking from your Razorpay account.</p>
+                <div class="topbar-left">
+                    <button type="button" class="icon-btn mobile-only" id="menu-toggle" aria-label="Menu"><i data-lucide="menu"></i></button>
+                    <div>
+                        <h1 id="page-title">Overview</h1>
+                        <p id="page-desc">Problem → insight → action → result</p>
+                    </div>
                 </div>
-                <div class="topbar-actions">
-                    <button type="button" class="btn btn-ghost" id="reset-btn">Reset demo</button>
-                    <button type="button" class="btn btn-primary" id="scan-btn">Run scan</button>
+                <div class="topbar-right">
+                    <button type="button" class="btn btn-ghost" id="reset-btn"><i data-lucide="rotate-ccw"></i> Reset</button>
+                    <button type="button" class="btn btn-primary" id="scan-btn"><i data-lucide="play"></i> Run scan</button>
                 </div>
             </header>
 
-            <!-- HOME -->
-            <section class="view active" id="view-home">
-                <div class="welcome">
-                    <h2>What Reclaim does</h2>
-                    <p>Connects to Razorpay → finds 5 types of lost money → recovers what it can automatically → asks you only when amount is too high.</p>
-                </div>
-
-                <div class="stat-row" id="home-stats">
-                    <div class="stat">
-                        <span class="stat-label">Recovered</span>
-                        <span class="stat-value recover" id="home-recovered">₹0</span>
+            <div class="content">
+                <!-- OVERVIEW / HOME -->
+                <section class="view active" id="view-home">
+                    <div class="story-rail" aria-label="Product journey">
+                        <div class="story-step done"><span>1</span> Problem</div>
+                        <div class="story-step" id="story-insight"><span>2</span> Insights</div>
+                        <div class="story-step" id="story-action"><span>3</span> Action</div>
+                        <div class="story-step" id="story-result"><span>4</span> Result</div>
                     </div>
-                    <div class="stat">
-                        <span class="stat-label">At risk</span>
-                        <span class="stat-value risk" id="home-at-risk">₹0</span>
+
+                    <div class="hero-grid">
+                        <article class="hero-card">
+                            <p class="kicker">Silent leaks</p>
+                            <h2>Merchants lose 1–3% of GMV to five cracks they never check.</h2>
+                            <p>Authorized-not-captured. Failed retries. Uncontested disputes. Stuck refunds. Abandoned checkouts.</p>
+                            <div class="hero-actions">
+                                <button type="button" class="btn btn-primary" id="home-scan-btn"><i data-lucide="radar"></i> Scan my Razorpay</button>
+                                <button type="button" class="btn btn-secondary" data-goto="architecture"><i data-lucide="info"></i> How it works</button>
+                            </div>
+                        </article>
+                        <article class="metric-card pulse-ready" id="recovered-card">
+                            <div class="metric-head">
+                                <i data-lucide="wallet"></i>
+                                <span>Recovered</span>
+                            </div>
+                            <p class="metric-value recover" id="home-recovered">₹0</p>
+                            <p class="metric-sub" id="home-rate-line">Run a scan to measure recovery</p>
+                            <div class="metric-spark">
+                                <canvas id="spark-recovered" height="48"></canvas>
+                            </div>
+                        </article>
                     </div>
-                    <div class="stat">
-                        <span class="stat-label">Pending</span>
-                        <span class="stat-value pending" id="home-pending">₹0</span>
+
+                    <div class="kpi-row">
+                        <article class="kpi interactive" data-goto="insights">
+                            <div class="kpi-icon risk"><i data-lucide="flame"></i></div>
+                            <div>
+                                <span>At risk</span>
+                                <strong class="risk" id="home-at-risk">₹0</strong>
+                            </div>
+                        </article>
+                        <article class="kpi interactive" data-goto="insights">
+                            <div class="kpi-icon pending"><i data-lucide="hourglass"></i></div>
+                            <div>
+                                <span>Pending</span>
+                                <strong class="pending" id="home-pending">₹0</strong>
+                            </div>
+                        </article>
+                        <article class="kpi interactive" data-goto="escalations">
+                            <div class="kpi-icon warn"><i data-lucide="user-check"></i></div>
+                            <div>
+                                <span>Needs review</span>
+                                <strong id="home-escalated">0</strong>
+                            </div>
+                        </article>
+                        <article class="kpi interactive" data-goto="insights">
+                            <div class="kpi-icon ok"><i data-lucide="percent"></i></div>
+                            <div>
+                                <span>Recovery rate</span>
+                                <strong class="recover" id="home-rate">0%</strong>
+                            </div>
+                        </article>
                     </div>
-                    <div class="stat">
-                        <span class="stat-label">Need your review</span>
-                        <span class="stat-value" id="home-escalated">0</span>
+
+                    <div class="split-2">
+                        <article class="panel">
+                            <div class="panel-head">
+                                <h3>Money breakdown</h3>
+                                <span class="hint">Recovered · Pending · Remaining risk</span>
+                            </div>
+                            <div class="chart-box"><canvas id="home-donut"></canvas></div>
+                        </article>
+                        <article class="panel">
+                            <div class="panel-head">
+                                <h3>By engine</h3>
+                                <span class="hint">Where recovery came from</span>
+                            </div>
+                            <div class="chart-box"><canvas id="home-bars"></canvas></div>
+                        </article>
                     </div>
-                </div>
 
-                <div class="steps">
-                    <h3>3 steps for a new user</h3>
-                    <ol>
-                        <li><strong>Open Run scan</strong> (left menu) or click the green button above.</li>
-                        <li><strong>Wait ~2 seconds</strong> — 5 engines check payments, disputes, refunds, checkouts.</li>
-                        <li><strong>See results</strong> on Issues, Escalations, and Audit trail.</li>
-                    </ol>
-                    <button type="button" class="btn btn-primary" id="home-scan-btn">Start my first scan</button>
-                </div>
-
-                <div class="leak-grid">
-                    <h3>The 5 leaks we fix</h3>
-                    <div class="leak-items">
-                        <div><b>1. Capture</b><span>Authorized but never captured</span></div>
-                        <div><b>2. Retry</b><span>Failed payment that can succeed again</span></div>
-                        <div><b>3. Dispute</b><span>Open chargeback you can contest</span></div>
-                        <div><b>4. Refund</b><span>Stuck refund angering customers</span></div>
-                        <div><b>5. Checkout</b><span>Abandoned cart with email/phone</span></div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- SCAN -->
-            <section class="view" id="view-scan">
-                <div class="panel">
-                    <h2>Run a full recovery scan</h2>
-                    <p class="muted">Scans simulated Razorpay data (or your test keys if set). No setup needed for the demo.</p>
-                    <button type="button" class="btn btn-primary btn-lg" id="scan-btn-main">Run scan now</button>
-                </div>
-
-                <div id="loading" class="panel loading hidden">
-                    <div class="progress"><div class="progress-bar"></div></div>
-                    <p><strong>Scanning…</strong></p>
-                    <ul id="loading-steps" class="loading-steps">
-                        <li>1. Capture Guardian</li>
-                        <li>2. Retry Strategist</li>
-                        <li>3. Dispute Defender</li>
-                        <li>4. Refund Resolver</li>
-                        <li>5. Checkout Rescuer</li>
-                    </ul>
-                </div>
-
-                <div id="scan-results" class="hidden">
-                    <div class="stat-row">
-                        <div class="stat">
-                            <span class="stat-label">Scanned</span>
-                            <span class="stat-value" id="stat-scanned">0</span>
+                    <div class="panel">
+                        <div class="panel-head">
+                            <h3>Five leak channels</h3>
+                            <span class="hint">Tap an engine to jump to scan</span>
                         </div>
-                        <div class="stat">
-                            <span class="stat-label">Issues found</span>
-                            <span class="stat-value" id="stat-issues">0</span>
+                        <div class="leak-cards" id="leak-cards">
+                            <button type="button" class="leak-card" data-goto="scan">
+                                <i data-lucide="credit-card"></i>
+                                <strong>Capture</strong>
+                                <span>Authorized, never captured</span>
+                            </button>
+                            <button type="button" class="leak-card" data-goto="scan">
+                                <i data-lucide="refresh-cw"></i>
+                                <strong>Retry</strong>
+                                <span>Transient failures ignored</span>
+                            </button>
+                            <button type="button" class="leak-card" data-goto="scan">
+                                <i data-lucide="scale"></i>
+                                <strong>Dispute</strong>
+                                <span>Evidence exists, never contested</span>
+                            </button>
+                            <button type="button" class="leak-card" data-goto="scan">
+                                <i data-lucide="banknote"></i>
+                                <strong>Refund</strong>
+                                <span>Stuck refunds → chargebacks</span>
+                            </button>
+                            <button type="button" class="leak-card" data-goto="scan">
+                                <i data-lucide="shopping-cart"></i>
+                                <strong>Checkout</strong>
+                                <span>Abandoned with contact info</span>
+                            </button>
                         </div>
-                        <div class="stat">
-                            <span class="stat-label">Recovered</span>
-                            <span class="stat-value recover" id="stat-recovered">₹0</span>
+                    </div>
+                </section>
+
+                <!-- SCAN -->
+                <section class="view" id="view-scan">
+                    <div class="action-banner panel">
+                        <div>
+                            <p class="kicker">Recommended action</p>
+                            <h2>Run a full recovery scan</h2>
+                            <p class="lead">Orchestrator runs five engines: detect → diagnose → decide → execute → audit.</p>
                         </div>
-                        <div class="stat">
-                            <span class="stat-label">Pending</span>
-                            <span class="stat-value pending" id="stat-pending">₹0</span>
+                        <button type="button" class="btn btn-primary btn-lg" id="scan-btn-main"><i data-lucide="play"></i> Run scan now</button>
+                    </div>
+
+                    <div id="loading" class="panel loading hidden">
+                        <div class="progress"><div class="progress-bar"></div></div>
+                        <div class="loading-head">
+                            <div class="spinner"></div>
+                            <div>
+                                <strong>Scanning Razorpay data…</strong>
+                                <p class="lead">Engines are detecting leaks and applying your rules.</p>
+                            </div>
                         </div>
-                        <div class="stat">
-                            <span class="stat-label">Escalated</span>
-                            <span class="stat-value risk" id="stat-escalated">0</span>
+                        <ul id="loading-steps" class="loading-steps">
+                            <li><i data-lucide="credit-card"></i> Capture Guardian</li>
+                            <li><i data-lucide="refresh-cw"></i> Retry Strategist</li>
+                            <li><i data-lucide="scale"></i> Dispute Defender</li>
+                            <li><i data-lucide="banknote"></i> Refund Resolver</li>
+                            <li><i data-lucide="shopping-cart"></i> Checkout Rescuer</li>
+                        </ul>
+                    </div>
+
+                    <div id="scan-results" class="hidden">
+                        <div class="result-banner panel success-tone">
+                            <div>
+                                <p class="kicker">Result</p>
+                                <h2>Scan complete</h2>
+                                <p class="lead" id="scan-result-line">Recovery summary ready.</p>
+                            </div>
+                            <button type="button" class="btn btn-secondary" data-goto="insights"><i data-lucide="line-chart"></i> View insights</button>
+                        </div>
+
+                        <div class="kpi-row five">
+                            <article class="kpi"><span>Scanned</span><strong id="stat-scanned">0</strong></article>
+                            <article class="kpi"><span>Issues</span><strong id="stat-issues">0</strong></article>
+                            <article class="kpi"><span>Recovered</span><strong class="recover" id="stat-recovered">₹0</strong></article>
+                            <article class="kpi"><span>Pending</span><strong class="pending" id="stat-pending">₹0</strong></article>
+                            <article class="kpi"><span>Escalated</span><strong class="risk" id="stat-escalated">0</strong></article>
+                        </div>
+
+                        <div class="split-2">
+                            <article class="panel">
+                                <div class="panel-head"><h3>Outcome mix</h3></div>
+                                <div class="chart-box short"><canvas id="scan-donut"></canvas></div>
+                            </article>
+                            <article class="panel">
+                                <div class="panel-head"><h3>Engine recovery</h3></div>
+                                <div class="chart-box short"><canvas id="scan-bars"></canvas></div>
+                            </article>
+                        </div>
+
+                        <article class="panel">
+                            <div class="panel-head"><h3>Engine results</h3></div>
+                            <div id="engines-body" class="engine-list"></div>
+                        </article>
+
+                        <div class="quick-links">
+                            <button class="btn btn-secondary" data-goto="issues"><i data-lucide="list-checks"></i> Issues</button>
+                            <button class="btn btn-secondary" data-goto="escalations"><i data-lucide="alert-triangle"></i> Escalations</button>
+                            <button class="btn btn-secondary" data-goto="audit"><i data-lucide="scroll-text"></i> Audit</button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- INSIGHTS -->
+                <section class="view" id="view-insights">
+                    <div class="panel" id="insights-empty">
+                        <div class="empty-state">
+                            <i data-lucide="line-chart"></i>
+                            <h3>No insights yet</h3>
+                            <p>Run a scan to unlock recovery graphs and funnel analytics.</p>
+                            <button type="button" class="btn btn-primary" data-goto="scan"><i data-lucide="play"></i> Go to Scan</button>
                         </div>
                     </div>
 
-                    <h3 class="block-h">Per engine</h3>
-                    <div id="engines-body" class="engine-list"></div>
-
-                    <div class="next-links">
-                        <button type="button" class="btn btn-ghost" data-goto="issues">View all issues →</button>
-                        <button type="button" class="btn btn-ghost" data-goto="escalations">Review escalations →</button>
-                        <button type="button" class="btn btn-ghost" data-goto="audit">Open audit trail →</button>
-                    </div>
-                </div>
-            </section>
-
-            <!-- ISSUES -->
-            <section class="view" id="view-issues">
-                <div class="panel">
-                    <p class="muted" id="issues-empty">No issues yet. Run a scan first.</p>
-                    <div class="table-wrap hidden" id="issues-wrap">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Engine</th>
-                                    <th>Issue</th>
-                                    <th>ID</th>
-                                    <th>Amount</th>
-                                    <th>Action</th>
-                                    <th>Result</th>
-                                    <th>AI note</th>
-                                </tr>
-                            </thead>
-                            <tbody id="issues-body"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </section>
-
-            <!-- ESCALATIONS -->
-            <section class="view" id="view-escalations">
-                <div class="panel">
-                    <p class="muted">These are above your auto-action limits. Reclaim did <strong>not</strong> execute them.</p>
-                    <div id="escalations-body" class="escalation-list">
-                        <p class="muted" id="escalations-empty">None yet. Run a scan first.</p>
-                    </div>
-                </div>
-            </section>
-
-            <!-- AUDIT -->
-            <section class="view" id="view-audit">
-                <div class="panel">
-                    <p class="muted">Append-only log. Every detect → diagnose → decide → execute.</p>
-                    <div id="audit-trail" class="audit-list">
-                        <p class="muted" id="audit-empty">No audit entries yet. Run a scan first.</p>
-                    </div>
-                </div>
-            </section>
-
-            <!-- ARCHITECTURE -->
-            <section class="view" id="view-architecture">
-                <div class="panel">
-                    <h2>System architecture</h2>
-                    <p class="muted">Simple flow — same pattern every time.</p>
-
-                    <div class="arch-flow" aria-label="Architecture diagram">
-                        <div class="arch-box you">You (merchant)</div>
-                        <div class="arch-arrow">↓</div>
-                        <div class="arch-box">Website / API</div>
-                        <div class="arch-arrow">↓</div>
-                        <div class="arch-box highlight">Orchestrator</div>
-                        <div class="arch-arrow">↓ runs</div>
-                        <div class="arch-engines">
-                            <span>Capture Guardian</span>
-                            <span>Retry Strategist</span>
-                            <span>Dispute Defender</span>
-                            <span>Refund Resolver</span>
-                            <span>Checkout Rescuer</span>
+                    <div id="insights-body" class="hidden">
+                        <div class="insight-hero panel">
+                            <div>
+                                <p class="kicker">Latest result</p>
+                                <h2 class="recover">₹<span id="ins-recovered-num">0</span> recovered</h2>
+                                <p class="lead" id="ins-summary">—</p>
+                            </div>
+                            <div class="pill-row">
+                                <div class="data-pill ok"><span>Recovered</span><strong id="ins-recovered">₹0</strong></div>
+                                <div class="data-pill wait"><span>Pending</span><strong id="ins-pending">₹0</strong></div>
+                                <div class="data-pill warn"><span>At risk</span><strong id="ins-at-risk">₹0</strong></div>
+                            </div>
                         </div>
-                        <div class="arch-arrow">↓ each engine</div>
-                        <div class="arch-row">
-                            <div class="arch-box">AI layer<br><small>classify / score / message</small></div>
-                            <div class="arch-box">Boundary rules<br><small>amount & category limits</small></div>
+
+                        <div class="split-2">
+                            <article class="panel">
+                                <div class="panel-head"><h3>Money split</h3></div>
+                                <div class="chart-box"><canvas id="ins-donut"></canvas></div>
+                            </article>
+                            <article class="panel">
+                                <div class="panel-head"><h3>Recovery by engine</h3></div>
+                                <div class="chart-box"><canvas id="ins-bars"></canvas></div>
+                            </article>
                         </div>
-                        <div class="arch-arrow">↓ if allowed</div>
-                        <div class="arch-box">Razorpay APIs</div>
-                        <div class="arch-arrow">↓ always</div>
-                        <div class="arch-box">Audit trail (SQLite)</div>
-                    </div>
 
-                    <h3 class="block-h">Request flow (one issue)</h3>
-                    <ol class="flow-ol">
-                        <li><code>scan()</code> — fetch payments / disputes / refunds / orders</li>
-                        <li><code>diagnose()</code> — AI or rules decide what happened</li>
-                        <li><code>decide()</code> — check your rules (boundary enforcer)</li>
-                        <li><code>execute()</code> — capture / retry link / contest / refund / message</li>
-                        <li><code>audit()</code> — write plain-English log entry</li>
-                    </ol>
-                </div>
-            </section>
+                        <article class="panel">
+                            <div class="panel-head"><h3>Issue outcomes</h3></div>
+                            <div class="chart-box short"><canvas id="ins-outcomes"></canvas></div>
+                        </article>
 
-            <!-- RULES -->
-            <section class="view" id="view-rules">
-                <div class="panel">
-                    <h2>Your recovery rules</h2>
-                    <p class="muted">Loaded from <code>data/boundaries.json</code>. Above these limits → escalation, not auto-action.</p>
-                    <div id="rules-body" class="rules-grid">
-                        <p class="muted">Loading…</p>
+                        <article class="panel">
+                            <div class="panel-head"><h3>Recovery funnel</h3></div>
+                            <div class="funnel" id="funnel-bars"></div>
+                        </article>
                     </div>
-                </div>
-            </section>
-        </main>
+                </section>
+
+                <!-- ISSUES -->
+                <section class="view" id="view-issues">
+                    <article class="panel">
+                        <div class="empty-state" id="issues-empty">
+                            <i data-lucide="list-checks"></i>
+                            <h3>No issues yet</h3>
+                            <p>Scan first to populate this table.</p>
+                        </div>
+                        <div class="table-wrap hidden" id="issues-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Engine</th>
+                                        <th>Issue</th>
+                                        <th>ID</th>
+                                        <th>Amount</th>
+                                        <th>Action</th>
+                                        <th>Result</th>
+                                        <th>AI</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="issues-body"></tbody>
+                            </table>
+                        </div>
+                    </article>
+                </section>
+
+                <!-- ESCALATIONS -->
+                <section class="view" id="view-escalations">
+                    <article class="panel">
+                        <p class="lead">Above auto-action thresholds — Revivo did not execute these.</p>
+                        <div id="escalations-body" class="escalation-list">
+                            <div class="empty-state" id="escalations-empty">
+                                <i data-lucide="shield-check"></i>
+                                <h3>Nothing to review</h3>
+                                <p>Escalations appear when amount or category needs a human.</p>
+                            </div>
+                        </div>
+                    </article>
+                </section>
+
+                <!-- AUDIT -->
+                <section class="view" id="view-audit">
+                    <article class="panel">
+                        <p class="lead">Append-only trail — detect → diagnose → decide → execute.</p>
+                        <div id="audit-trail" class="audit-list">
+                            <div class="empty-state" id="audit-empty">
+                                <i data-lucide="scroll-text"></i>
+                                <h3>Audit is empty</h3>
+                                <p>Every automated action will appear here after a scan.</p>
+                            </div>
+                        </div>
+                    </article>
+                </section>
+
+                <!-- ARCHITECTURE -->
+                <section class="view" id="view-architecture">
+                    <article class="panel">
+                        <div class="panel-head">
+                            <h3>System architecture</h3>
+                            <span class="hint">Same loop for every issue</span>
+                        </div>
+                        <div class="arch-flow">
+                            <div class="arch-node dark">Merchant</div>
+                            <div class="arch-edge"></div>
+                            <div class="arch-node">Web app + API</div>
+                            <div class="arch-edge"></div>
+                            <div class="arch-node brand">Orchestrator</div>
+                            <div class="arch-edge"></div>
+                            <div class="arch-engines">
+                                <span>Capture</span><span>Retry</span><span>Dispute</span><span>Refund</span><span>Checkout</span>
+                            </div>
+                            <div class="arch-edge"></div>
+                            <div class="arch-row">
+                                <div class="arch-node">AI layer</div>
+                                <div class="arch-node">Boundaries</div>
+                            </div>
+                            <div class="arch-edge"></div>
+                            <div class="arch-node">Razorpay APIs</div>
+                            <div class="arch-edge"></div>
+                            <div class="arch-node">Audit ledger</div>
+                        </div>
+                    </article>
+                </section>
+
+                <!-- RULES -->
+                <section class="view" id="view-rules">
+                    <article class="panel">
+                        <div class="panel-head">
+                            <h3>Merchant boundaries</h3>
+                            <span class="hint">From boundaries.json</span>
+                        </div>
+                        <div id="rules-body" class="rules-grid"><p class="lead">Loading…</p></div>
+                    </article>
+                </section>
+            </div>
+        </div>
     </div>
 
-    <button type="button" class="menu-toggle" id="menu-toggle" aria-label="Menu">Menu</button>
+    <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
     <script src="/static/app.js"></script>
 </body>
 </html>

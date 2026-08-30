@@ -1,4 +1,4 @@
-# Deployment — Reclaim: AI Revenue Recovery Agent
+# Deployment — Revivo: AI Revenue Recovery Agent
 
 > Infrastructure, CI/CD, observability, and secrets management.
 > Informed by all preceding spec documents.
@@ -12,7 +12,7 @@
 │              Developer Machine               │
 │                                             │
 │  ┌─────────────┐    ┌──────────────────┐    │
-│  │  Docker      │    │  Reclaim Container│   │
+│  │  Docker      │    │  Revivo Container│   │
 │  │  Engine      │───▶│  (uvicorn + app)  │   │
 │  └─────────────┘    └────────┬─────────┘    │
 │                              │              │
@@ -50,19 +50,19 @@ RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 FROM python:3.11-slim AS production
 
 # Non-root user for security
-RUN useradd -m -s /bin/bash reclaim
+RUN useradd -m -s /bin/bash Revivo
 WORKDIR /app
 
 # Copy installed packages from builder
 COPY --from=builder /install /usr/local
 
 # Copy application code
-COPY --chown=reclaim:reclaim src/ ./src/
-COPY --chown=reclaim:reclaim demo.py .
-COPY --chown=reclaim:reclaim README.md .
+COPY --chown=Revivo:Revivo src/ ./src/
+COPY --chown=Revivo:Revivo demo.py .
+COPY --chown=Revivo:Revivo README.md .
 
 # Switch to non-root user
-USER reclaim
+USER Revivo
 
 # Expose port
 EXPOSE 8000
@@ -79,16 +79,16 @@ CMD ["uvicorn", "src.server:app", "--host", "0.0.0.0", "--port", "8000", "--work
 
 ```bash
 # Build
-docker build -t reclaim:latest .
+docker build -t Revivo:latest .
 
 # Run (no OpenAI key — uses static fallback)
-docker run -p 8000:8000 reclaim:latest
+docker run -p 8000:8000 Revivo:latest
 
 # Run with OpenAI key (enables AI diagnosis)
-docker run -p 8000:8000 -e OPENAI_API_KEY=sk-... reclaim:latest
+docker run -p 8000:8000 -e OPENAI_API_KEY=sk-... Revivo:latest
 
 # Run for development (with reload)
-docker run -p 8000:8000 -v $(pwd)/src:/app/src reclaim:latest \
+docker run -p 8000:8000 -v $(pwd)/src:/app/src Revivo:latest \
     uvicorn src.server:app --host 0.0.0.0 --port 8000 --reload
 ```
 
@@ -108,7 +108,7 @@ docker run -p 8000:8000 -v $(pwd)/src:/app/src reclaim:latest \
 ### .env.example
 
 ```bash
-# Reclaim — Environment Variables
+# Revivo — Environment Variables
 # Copy to .env and fill in your values
 
 # OpenAI (optional — system works without it using static fallback rules)
@@ -193,10 +193,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
-      - run: docker build -t reclaim:latest .
-      - run: docker run -d -p 8000:8000 --name reclaim-test reclaim:latest
+      - run: docker build -t Revivo:latest .
+      - run: docker run -d -p 8000:8000 --name Revivo-test Revivo:latest
       - run: sleep 3 && curl -sf http://localhost:8000/health
-      - run: docker stop reclaim-test && docker rm reclaim-test
+      - run: docker stop Revivo-test && docker rm Revivo-test
 ```
 
 ### Pipeline Stages (8 stages)
@@ -233,7 +233,7 @@ class JsonFormatter(logging.Formatter):
         }
         return json.dumps(log)
 
-logger = logging.getLogger("reclaim")
+logger = logging.getLogger("Revivo")
 handler = logging.StreamHandler(sys.stdout)
 handler.setFormatter(JsonFormatter())
 logger.addHandler(handler)
@@ -265,25 +265,25 @@ Returns `200` when healthy, `503` when unhealthy (e.g., if startup fails).
 v1 includes a `/metrics` endpoint stub that returns basic Prometheus-format metrics:
 
 ```
-# HELP reclaim_scans_total Total scans triggered
-# TYPE reclaim_scans_total counter
-reclaim_scans_total 42
+# HELP Revivo_scans_total Total scans triggered
+# TYPE Revivo_scans_total counter
+Revivo_scans_total 42
 
-# HELP reclaim_leaks_detected_total Total leaks detected by type
-# TYPE reclaim_leaks_detected_total counter
-reclaim_leaks_detected_total{type="L1"} 15
-reclaim_leaks_detected_total{type="L2"} 8
+# HELP Revivo_leaks_detected_total Total leaks detected by type
+# TYPE Revivo_leaks_detected_total counter
+Revivo_leaks_detected_total{type="L1"} 15
+Revivo_leaks_detected_total{type="L2"} 8
 
-# HELP reclaim_interventions_total Total interventions by status
-# TYPE reclaim_interventions_total counter
-reclaim_interventions_total{status="executed"} 12
-reclaim_interventions_total{status="failed"} 2
-reclaim_interventions_total{status="skipped_dry_run"} 30
+# HELP Revivo_interventions_total Total interventions by status
+# TYPE Revivo_interventions_total counter
+Revivo_interventions_total{status="executed"} 12
+Revivo_interventions_total{status="failed"} 2
+Revivo_interventions_total{status="skipped_dry_run"} 30
 
-# HELP reclaim_razorpay_api_duration_ms Razorpay API call duration
-# TYPE reclaim_razorpay_api_duration_ms histogram
-reclaim_razorpay_api_duration_ms_bucket{le="100"} 45
-reclaim_razorpay_api_duration_ms_bucket{le="500"} 52
+# HELP Revivo_razorpay_api_duration_ms Razorpay API call duration
+# TYPE Revivo_razorpay_api_duration_ms histogram
+Revivo_razorpay_api_duration_ms_bucket{le="100"} 45
+Revivo_razorpay_api_duration_ms_bucket{le="500"} 52
 ```
 
 ### 5.4 Audit Trail as Observability
@@ -323,8 +323,8 @@ This is embedded in the `RecoveryReport` returned to the user — the audit trai
 
 ```bash
 # Clone
-git clone https://github.com/sahil/reclaim.git
-cd reclaim
+git clone https://github.com/sahil/Revivo.git
+cd Revivo
 
 # Create venv
 python -m venv .venv
@@ -349,8 +349,8 @@ uvicorn src.server:app --reload --port 8000
 python demo.py
 
 # Docker (optional)
-docker build -t reclaim:latest .
-docker run -p 8000:8000 reclaim:latest
+docker build -t Revivo:latest .
+docker run -p 8000:8000 Revivo:latest
 ```
 
 ### Requirements

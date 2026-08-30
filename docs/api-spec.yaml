@@ -1,8 +1,8 @@
 openapi: 3.0.3
 info:
-  title: Reclaim — AI Revenue Recovery Agent
+  title: Revivo — AI Revenue Recovery Agent
   description: |
-    Reclaim is an AI agent that detects revenue leaks in a Razorpay merchant account,
+    Revivo is an AI agent that detects revenue leaks in a Razorpay merchant account,
     diagnoses each leak, executes bounded recovery actions, and produces an audited
     recovery report.
 
@@ -23,7 +23,7 @@ info:
   version: 1.0.0
   contact:
     name: Sahil
-    url: https://github.com/sahil/reclaim
+    url: https://github.com/sahil/Revivo
   license:
     name: MIT
 

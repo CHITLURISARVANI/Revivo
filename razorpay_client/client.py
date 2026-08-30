@@ -20,7 +20,7 @@ SYNTHETIC_DATA_PATH = Path(__file__).resolve().parent.parent / "data" / "synthet
 
 
 class RazorpayClient:
-    """Wrapper around Razorpay SDK for Reclaim's needs."""
+    """Wrapper around Razorpay SDK for Revivo's needs."""
 
     def __init__(self, key_id: str = None, key_secret: str = None):
         """
