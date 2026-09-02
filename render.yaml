@@ -10,3 +10,5 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: "3.11.9"
+      - key: REVIVO_BUILD
+        value: "b9"

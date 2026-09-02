@@ -56,7 +56,8 @@ class EscalationResolve(BaseModel):
 
 # ─── Endpoints ───
 
-ASSET_VERSION = "20260902b8"
+ASSET_VERSION = "20260902b9"
+BUILD_LABEL = "Build b9"
 
 
 def _serve_index_html() -> HTMLResponse:
@@ -80,11 +81,16 @@ def _serve_index_html() -> HTMLResponse:
         f"/static/style.css?v={ASSET_VERSION}",
         html,
     )
+    # Force visible build pills to match this server process (avoids stale HTML on CDN/browser)
+    html = re.sub(r"Build b\d+", BUILD_LABEL, html)
+    html = re.sub(r"Build 20\d{6}-b\d+", f"Build {ASSET_VERSION}", html)
     return HTMLResponse(
         content=html,
         headers={
-            "Cache-Control": "no-store, no-cache, must-revalidate",
+            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
             "Pragma": "no-cache",
+            "Expires": "0",
+            "X-Revivo-Build": BUILD_LABEL,
         },
     )
 
@@ -141,6 +147,8 @@ def health():
         "ai_api": "connected" if os.getenv("OPENAI_API_KEY") else "fallback",
         "database": "connected",
         "version": "1.0.0",
+        "build": BUILD_LABEL,
+        "asset_version": ASSET_VERSION,
     }
 
 
