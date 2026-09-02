@@ -71,7 +71,7 @@
                     <li><i data-lucide="brain"></i><span>Diagnose with AI — retry only what can win</span></li>
                     <li><i data-lucide="shield-check"></i><span>Act within merchant boundaries + full audit trail</span></li>
                 </ul>
-                <div class="auth-story-foot">Razorpay AI Buildathon 2026 · Track 03 · <span id="build-id-auth">Build 20260902-b10</span></div>
+                <div class="auth-story-foot">Razorpay AI Buildathon 2026 · Track 03 · <span id="build-id-auth">Build 20260902-b11</span></div>
             </aside>
 
             <div class="auth-panel">
@@ -136,7 +136,7 @@
                     <div>
                         <strong>Revivo</strong>
                         <small>Revenue recovery</small>
-                        <span class="build-pill" id="build-id" title="Deployed build">Build b10</span>
+                        <span class="build-pill" id="build-id" title="Deployed build">Build b11</span>
                     </div>
                 </div>
                 <nav class="nav" id="sidebar-nav">
@@ -173,7 +173,7 @@
                     </div>
                 </div>
                 <div class="topbar-right">
-                    <span class="build-pill topbar-build" id="build-id-top" title="Deployed build">Build b10</span>
+                    <span class="build-pill topbar-build" id="build-id-top" title="Deployed build">Build b11</span>
                     <button type="button" class="btn btn-ghost" id="reset-btn"><i data-lucide="rotate-ccw"></i> Reset</button>
                     <button type="button" class="btn btn-primary" id="scan-btn"><i data-lucide="play"></i> Run scan</button>
                 </div>
@@ -206,6 +206,18 @@
                         <div class="money-story-bar" role="presentation">
                             <div class="money-story-bar-fill" id="money-story-bar-fill" style="width: 0%"></div>
                         </div>
+                    </article>
+
+                    <article class="panel whatif-panel" id="whatif-panel">
+                        <div class="panel-head">
+                            <h3>What if thresholds change?</h3>
+                            <span class="hint">Capture auto-max — live preview</span>
+                        </div>
+                        <label class="whatif-slider">
+                            <span>Auto-capture max: <strong id="whatif-threshold-label">₹50,000</strong></span>
+                            <input type="range" id="whatif-capture" min="10000" max="100000" step="5000" value="50000">
+                        </label>
+                        <p class="whatif-result" id="whatif-result">Run a scan to simulate threshold impact.</p>
                     </article>
 
                     <div class="hero-grid">
@@ -630,6 +642,31 @@
     </div>
 
     <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+
+    <!-- Issue explain drawer -->
+    <div id="issue-drawer" class="issue-drawer hidden" aria-hidden="true">
+        <div class="issue-drawer-backdrop" id="issue-drawer-close"></div>
+        <aside class="issue-drawer-panel" role="dialog" aria-labelledby="drawer-title">
+            <header class="issue-drawer-head">
+                <div>
+                    <p class="kicker">Why this action?</p>
+                    <h2 id="drawer-title">Issue detail</h2>
+                </div>
+                <button type="button" class="icon-btn" id="issue-drawer-x" aria-label="Close"><i data-lucide="x"></i></button>
+            </header>
+            <div class="issue-drawer-body" id="issue-drawer-body"></div>
+        </aside>
+    </div>
+
+    <!-- Guided demo tour -->
+    <nav id="demo-tour" class="demo-tour hidden" aria-label="Demo guide">
+        <button type="button" class="tour-step active" data-tour="scan"><span>1</span> Scan</button>
+        <button type="button" class="tour-step" data-tour="issues"><span>2</span> Issues</button>
+        <button type="button" class="tour-step" data-tour="escalations"><span>3</span> Escalations</button>
+        <button type="button" class="tour-step" data-tour="audit"><span>4</span> Audit</button>
+        <button type="button" class="tour-dismiss" id="tour-dismiss" aria-label="Hide guide"><i data-lucide="x"></i></button>
+    </nav>
+
     <script src="/static/app.js"></script>
 </body>
 </html>

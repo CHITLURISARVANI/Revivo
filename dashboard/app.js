@@ -204,33 +204,132 @@ function resultLabel(issue) {
     return "no_action";
 }
 
+function confidenceChip(issue) {
+    if (!issue.ai_classification) return "";
+    const cls = String(issue.ai_classification).toLowerCase();
+    const pct =
+        issue.ai_confidence != null
+            ? Math.round(Number(issue.ai_confidence) * 100)
+            : null;
+    const tone = cls === "transient" ? "ok" : cls === "permanent" ? "bad" : "soft";
+    const label = cls.toUpperCase() + (pct != null ? ` ${pct}%` : "");
+    return `<span class="conf-chip ${tone}">${label}</span>`;
+}
+
+function smsPreview(issue) {
+    const msg = issue.recovery_message;
+    if (!msg) return "";
+    const link = issue.recovery_link || "";
+    return `
+      <div class="sms-preview">
+        <span class="sms-label">Hinglish recovery</span>
+        <p>“${escapeHtml(String(msg))}”</p>
+        ${link ? `<a class="sms-link" href="${escapeHtml(link)}" target="_blank" rel="noopener">${escapeHtml(link)}</a>` : ""}
+      </div>`;
+}
+
+function escapeHtml(s) {
+    return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+}
+
 function aiCell(issue) {
-    const parts = [];
-    if (issue.ai_classification) {
-        const conf =
-            issue.ai_confidence != null
-                ? ` ${Math.round(Number(issue.ai_confidence) * 100)}%`
-                : "";
-        parts.push(String(issue.ai_classification).toUpperCase() + conf);
-    }
+    const bits = [];
+    const chip = confidenceChip(issue);
+    if (chip) bits.push(chip);
     if (issue.ai_winnability_score != null && issue.ai_winnability_score !== "") {
         const score = Number(issue.ai_winnability_score);
-        parts.push(score.toFixed(2) + (score >= 0.6 ? " winnable" : " low-win"));
+        bits.push(
+            `<span class="conf-chip ${score >= 0.6 ? "ok" : "soft"}">${score.toFixed(2)} ${
+                score >= 0.6 ? "winnable" : "low-win"
+            }</span>`
+        );
     }
-    if (issue.evidence_summary) {
-        parts.push(String(issue.evidence_summary).slice(0, 70));
+    if (issue.recovery_message && (issue.engine === "checkout_rescuer" || issue.issue_type === "abandoned_checkout")) {
+        bits.push(smsPreview(issue));
+    } else if (issue.recovery_message && issue.engine === "retry_strategist") {
+        bits.push(`<span class="ai-snippet">“${escapeHtml(String(issue.recovery_message).slice(0, 64))}…”</span>`);
+    } else if (issue.ai_reasoning) {
+        bits.push(`<span class="ai-snippet">${escapeHtml(String(issue.ai_reasoning).slice(0, 90))}${String(issue.ai_reasoning).length > 90 ? "…" : ""}</span>`);
+    } else if (issue.evidence_summary) {
+        bits.push(`<span class="ai-snippet">${escapeHtml(String(issue.evidence_summary).slice(0, 80))}</span>`);
     }
-    if (issue.ai_reasoning) {
-        parts.push(String(issue.ai_reasoning).slice(0, 100) + (String(issue.ai_reasoning).length > 100 ? "…" : ""));
+    return bits.length ? bits.join("") : "—";
+}
+
+let issueIndex = [];
+
+function whySteps(issue) {
+    const steps = [];
+    steps.push({
+        phase: "Detect",
+        text: `${issue.issue_type || "issue"} on ${issue.razorpay_entity_id || issue.payment_id || "entity"} · ${formatINR(issue.amount_inr)}`,
+    });
+    const diagnoseParts = [];
+    if (issue.ai_classification) {
+        diagnoseParts.push(
+            `${String(issue.ai_classification).toUpperCase()}` +
+                (issue.ai_confidence != null ? ` (${Math.round(Number(issue.ai_confidence) * 100)}% confidence)` : "")
+        );
     }
-    if (issue.recovery_message) {
-        parts.push('"' + String(issue.recovery_message).slice(0, 70) + (String(issue.recovery_message).length > 70 ? "…" : "") + '"');
+    if (issue.ai_winnability_score != null) {
+        diagnoseParts.push(`winnability ${Number(issue.ai_winnability_score).toFixed(2)}`);
     }
-    if (issue.diagnosis && !parts.length) {
-        parts.push(String(issue.diagnosis));
-    }
-    // Deterministic Capture Guardian with no AI fields → em dash
-    return parts.length ? parts.join(" — ") : "—";
+    if (issue.ai_reasoning) diagnoseParts.push(String(issue.ai_reasoning));
+    else if (issue.diagnosis) diagnoseParts.push(String(issue.diagnosis));
+    else if (issue.evidence_summary) diagnoseParts.push(String(issue.evidence_summary));
+    steps.push({
+        phase: "Diagnose",
+        text: diagnoseParts.join(" — ") || "Rules + AI reviewed this case",
+    });
+    const boundary = issue.escalated
+        ? "Boundary check failed or risk policy blocked auto-action → escalate to merchant"
+        : "Boundary check passed → safe to auto-act within merchant rules";
+    steps.push({ phase: "Decide", text: boundary });
+    steps.push({
+        phase: issue.escalated ? "Escalate" : "Execute",
+        text: `${issue.action_taken || "no_action"} → ${resultLabel(issue)}`,
+    });
+    return steps;
+}
+
+function openIssueDrawer(issue) {
+    const drawer = document.getElementById("issue-drawer");
+    const body = document.getElementById("issue-drawer-body");
+    if (!drawer || !body) return;
+    setText("drawer-title", ENGINE_NAMES[issue.engine] || issue.engine || "Issue");
+    const steps = whySteps(issue)
+        .map(
+            (s) => `
+        <div class="why-step">
+          <span class="why-phase">${escapeHtml(s.phase)}</span>
+          <p>${escapeHtml(s.text)}</p>
+        </div>`
+        )
+        .join("");
+    body.innerHTML = `
+      <div class="drawer-meta">
+        <span>${escapeHtml(issue.issue_type || "")}</span>
+        <code>${escapeHtml(issue.razorpay_entity_id || issue.payment_id || "—")}</code>
+        <strong>${formatINR(issue.amount_inr)}</strong>
+        ${badge(issue)}
+      </div>
+      <div class="why-rail">${steps}</div>
+      ${issue.recovery_message ? smsPreview(issue) : ""}
+      <p class="fine">Tap outside or × to close. Same boundary logic used in Rules.</p>
+    `;
+    drawer.classList.remove("hidden");
+    drawer.setAttribute("aria-hidden", "false");
+    refreshIcons(drawer);
+}
+
+function closeIssueDrawer() {
+    const drawer = document.getElementById("issue-drawer");
+    drawer?.classList.add("hidden");
+    drawer?.setAttribute("aria-hidden", "true");
 }
 
 function renderIssues(engines) {
@@ -239,13 +338,19 @@ function renderIssues(engines) {
     const wrap = document.getElementById("issues-wrap");
     if (!tbody) return;
     tbody.innerHTML = "";
+    issueIndex = [];
     let count = 0;
 
     for (const er of engines) {
         if (er.skipped) continue;
         for (const issue of er.issues || []) {
+            const idx = issueIndex.length;
+            issueIndex.push(issue);
             count++;
             const tr = document.createElement("tr");
+            tr.className = "issue-row";
+            tr.dataset.idx = String(idx);
+            tr.title = "Click to see why this action";
             tr.innerHTML = `
                 <td>${ENGINE_NAMES[issue.engine] || issue.engine || ""}</td>
                 <td>${issue.issue_type || ""}</td>
@@ -255,6 +360,7 @@ function renderIssues(engines) {
                 <td class="result-cell">${badge(issue)}<div class="result-text">${resultLabel(issue)}</div></td>
                 <td class="ai-cell">${aiCell(issue)}</td>
             `;
+            tr.addEventListener("click", () => openIssueDrawer(issue));
             tbody.appendChild(tr);
         }
     }
@@ -266,6 +372,65 @@ function renderIssues(engines) {
         empty?.classList.remove("hidden");
         wrap?.classList.add("hidden");
     }
+    updateWhatIf();
+}
+
+function updateWhatIf() {
+    const slider = document.getElementById("whatif-capture");
+    const label = document.getElementById("whatif-threshold-label");
+    const result = document.getElementById("whatif-result");
+    if (!slider || !result) return;
+    const threshold = Number(slider.value || 50000);
+    if (label) label.textContent = formatINR(threshold);
+
+    const captures = issueIndex.filter(
+        (i) => i.engine === "capture_guardian" || i.issue_type === "authorized_not_captured"
+    );
+    if (!captures.length) {
+        result.textContent = "Run a scan to simulate threshold impact.";
+        return;
+    }
+    let auto = 0;
+    let escalate = 0;
+    let autoAmt = 0;
+    let escAmt = 0;
+    captures.forEach((i) => {
+        const amt = Number(i.amount_inr || 0);
+        if (amt > threshold) {
+            escalate += 1;
+            escAmt += amt;
+        } else {
+            auto += 1;
+            autoAmt += amt;
+        }
+    });
+    result.innerHTML = `At <strong>${formatINR(threshold)}</strong>: <span class="recover">${auto} auto-capture</span> (${formatINR(autoAmt)}) · <span class="risk">${escalate} escalate</span> (${formatINR(escAmt)})`;
+}
+
+function setTourStep(view) {
+    document.querySelectorAll(".tour-step").forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.tour === view);
+    });
+}
+
+function initDemoTour() {
+    const tour = document.getElementById("demo-tour");
+    if (!tour) return;
+    if (localStorage.getItem("Revivo_hide_tour") === "1") {
+        tour.classList.add("hidden");
+        return;
+    }
+    tour.querySelectorAll("[data-tour]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+            const view = btn.dataset.tour;
+            showView(view === "scan" ? "scan" : view);
+            setTourStep(view);
+        });
+    });
+    document.getElementById("tour-dismiss")?.addEventListener("click", () => {
+        tour.classList.add("hidden");
+        localStorage.setItem("Revivo_hide_tour", "1");
+    });
 }
 
 function showAuthStep(step) {
@@ -367,6 +532,9 @@ function enterApp(session) {
     document.getElementById("wake-gate")?.classList.add("hidden");
     document.getElementById("auth-gate")?.classList.add("hidden");
     document.getElementById("app-shell")?.classList.remove("hidden");
+    if (localStorage.getItem("Revivo_hide_tour") !== "1") {
+        document.getElementById("demo-tour")?.classList.remove("hidden");
+    }
     const name = session.businessName || session.email || "Merchant";
     setText("merchant-name", name);
     setText("merchant-avatar", (name[0] || "M").toUpperCase());
@@ -379,6 +547,7 @@ function enterApp(session) {
 function showAuthGate() {
     document.getElementById("app-shell")?.classList.add("hidden");
     document.getElementById("auth-gate")?.classList.remove("hidden");
+    document.getElementById("demo-tour")?.classList.add("hidden");
     document.querySelector(".sidebar")?.classList.remove("open");
     document.getElementById("sidebar-backdrop")?.classList.remove("show");
     showCinematic();
@@ -537,6 +706,9 @@ function showView(name) {
     }
     if (name === "rules") {
         loadRules();
+    }
+    if (["scan", "issues", "escalations", "audit"].includes(name)) {
+        setTourStep(name);
     }
 }
 
@@ -1136,6 +1308,8 @@ async function boot() {
     selectRecoveryEta("capture_guardian");
     // Rules must load regardless of auth / scan state
     loadRules();
+    initDemoTour();
+    updateWhatIf();
 
     await ensureServerAwake();
 
@@ -1189,6 +1363,10 @@ document.getElementById("scan-btn")?.addEventListener("click", runScan);
 document.getElementById("scan-btn-main")?.addEventListener("click", runScan);
 document.getElementById("home-scan-btn")?.addEventListener("click", runScan);
 document.getElementById("reset-btn")?.addEventListener("click", resetDemo);
+
+document.getElementById("issue-drawer-close")?.addEventListener("click", closeIssueDrawer);
+document.getElementById("issue-drawer-x")?.addEventListener("click", closeIssueDrawer);
+document.getElementById("whatif-capture")?.addEventListener("input", updateWhatIf);
 
 document.getElementById("menu-toggle")?.addEventListener("click", () => {
     document.querySelector(".sidebar")?.classList.add("open");

@@ -56,8 +56,8 @@ class EscalationResolve(BaseModel):
 
 # ─── Endpoints ───
 
-ASSET_VERSION = "20260902b10"
-BUILD_LABEL = "Build b10"
+ASSET_VERSION = "20260902b11"
+BUILD_LABEL = "Build b11"
 
 
 def _serve_index_html() -> HTMLResponse:
