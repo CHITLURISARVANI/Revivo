@@ -2,6 +2,7 @@
 
 const SESSION_KEY = "Revivo_session";
 const SCAN_CACHE_KEY = "Revivo_last_scan";
+const SCAN_IN_PROGRESS_KEY = "Revivo_scan_in_progress";
 
 const ENGINE_NAMES = {
     capture_guardian: "Capture Guardian",
@@ -527,6 +528,15 @@ async function ensureServerAwake() {
     return ok;
 }
 
+function setModeLabel(session, health) {
+    let mode = "Mode: Demo";
+    if (health?.razorpay_api === "connected") mode = "Mode: Live test";
+    else if (health?.razorpay_api === "simulated") mode = "Mode: Demo";
+    if (session?.demoMode) mode = "Mode: Demo";
+    if (session?.keyId && !session?.demoMode) mode = "Mode: Keys connected";
+    setText("mode-indicator", mode);
+}
+
 function enterApp(session) {
     saveSession(session);
     document.getElementById("wake-gate")?.classList.add("hidden");
@@ -538,6 +548,7 @@ function enterApp(session) {
     const name = session.businessName || session.email || "Merchant";
     setText("merchant-name", name);
     setText("merchant-avatar", (name[0] || "M").toUpperCase());
+    setModeLabel(session);
     showView("home");
     initAppData();
     refreshIcons();
@@ -716,15 +727,15 @@ function sleep(ms) {
     return new Promise((r) => setTimeout(r, ms));
 }
 
-function animateValue(el, end, prefix, duration) {
+function animateValue(el, end, duration) {
     if (!el) return;
     const t0 = performance.now();
     function frame(t) {
         const p = Math.min(1, (t - t0) / duration);
         const eased = 1 - Math.pow(1 - p, 3);
-        const val = end * eased;
-        el.textContent = (prefix || "") + Math.round(val).toLocaleString("en-IN");
+        el.textContent = formatINR(Math.round(end * eased));
         if (p < 1) requestAnimationFrame(frame);
+        else el.textContent = formatINR(end);
     }
     requestAnimationFrame(frame);
 }
@@ -853,7 +864,7 @@ function updateAllCharts(data) {
             x: { grid: { display: false } },
             y: {
                 beginAtZero: true,
-                ticks: { callback: (v) => "₹" + Number(v).toLocaleString("en-IN") },
+                ticks: { callback: (v) => formatINR(v) },
                 grid: { color: "rgba(183,201,192,0.35)" },
             },
         },
@@ -964,9 +975,21 @@ function renderInsights(data) {
     );
 }
 
+let scanInFlight = false;
+
 async function runScan() {
+    if (scanInFlight) {
+        toast("Scan already running — please wait", "err");
+        return;
+    }
+    scanInFlight = true;
+    try {
+        sessionStorage.setItem(SCAN_IN_PROGRESS_KEY, "1");
+    } catch (_) {}
+
     showView("scan");
     document.getElementById("scan-results")?.classList.add("hidden");
+    document.getElementById("scan-error")?.classList.add("hidden");
     document.getElementById("loading")?.classList.remove("hidden");
     updateStoryRail(false);
     document.getElementById("story-action")?.classList.add("active");
@@ -979,9 +1002,12 @@ async function runScan() {
     animateSteps();
     toast("Scan started across 5 engines…");
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 45000);
+
     try {
-        const res = await fetch("/api/scan", { method: "POST" });
-        if (!res.ok) throw new Error("HTTP " + res.status);
+        const res = await fetch("/api/scan", { method: "POST", signal: controller.signal });
+        if (!res.ok) throw new Error("Server returned HTTP " + res.status);
         const data = await res.json();
         lastScan = data;
         cacheScan(data);
@@ -993,9 +1019,27 @@ async function runScan() {
         toast("Scan complete — " + formatINR(data.summary?.amount_recovered_inr) + " recovered", "ok");
         refreshIcons();
     } catch (err) {
-        toast("Scan failed: " + err.message, "err");
         document.getElementById("loading")?.classList.add("hidden");
+        const offline = typeof navigator !== "undefined" && navigator.onLine === false;
+        const aborted = err?.name === "AbortError";
+        const msg = offline
+            ? "No internet — reconnect and try Run scan again."
+            : aborted
+              ? "Scan timed out — try again in a moment."
+              : "Scan failed: " + (err?.message || "network error");
+        toast(msg, "err");
+        const errBox = document.getElementById("scan-error");
+        if (errBox) {
+            errBox.textContent = msg;
+            errBox.classList.remove("hidden");
+        }
+        showView("scan");
     } finally {
+        clearTimeout(timeoutId);
+        scanInFlight = false;
+        try {
+            sessionStorage.removeItem(SCAN_IN_PROGRESS_KEY);
+        } catch (_) {}
         ["scan-btn", "scan-btn-main", "home-scan-btn"].forEach((id) => {
             const el = document.getElementById(id);
             if (el) el.disabled = false;
@@ -1011,7 +1055,7 @@ function renderAll(data) {
             ? Math.round(((split.recovered + split.pending) / split.atRisk) * 100)
             : 0;
 
-    animateValue(document.getElementById("home-recovered"), Number(s.amount_recovered_inr || 0), "₹", 900);
+    animateValue(document.getElementById("home-recovered"), Number(s.amount_recovered_inr || 0), 900);
     setText("home-at-risk", formatINR(s.amount_at_risk_inr));
     setText("home-pending", formatINR(s.amount_pending_inr));
     setText("home-escalated", s.escalations || 0);
@@ -1047,7 +1091,7 @@ function renderAll(data) {
     updateStoryRail(true);
 
     const mode =
-        data.razorpay_mode === "simulated" ? "Mode: Simulated (demo)" : "Mode: Live test";
+        data.razorpay_mode === "simulated" ? "Mode: Demo" : "Mode: Live test";
     setText("mode-indicator", mode);
 }
 
@@ -1143,7 +1187,7 @@ async function loadRules() {
     if (!body) return;
 
     const paint = (cfg) => {
-        const inr = (n) => "₹" + Number(n || 0).toLocaleString("en-IN");
+        const inr = (n) => formatINR(n);
         const engines = [
             ["Capture Guardian", [
                 ["Auto-act max", inr(cfg.capture_guardian?.auto_capture_threshold_inr)],
@@ -1246,20 +1290,27 @@ async function resetDemo() {
 async function initAppData() {
     try {
         const h = await fetch("/health").then((r) => r.json());
-        const session = getSession();
-        let mode = h.razorpay_api === "simulated" ? "Mode: Simulated (demo)" : "Mode: Live test";
-        if (session?.demoMode) mode = "Mode: Demo data";
-        if (session?.keyId) mode = "Mode: Keys connected";
-        setText("mode-indicator", mode);
+        setModeLabel(getSession(), h);
     } catch {
-        setText("mode-indicator", "Mode: offline");
+        setText("mode-indicator", "Mode: Offline");
     }
 
     loadRules();
+
+    let interrupted = false;
+    try {
+        interrupted = sessionStorage.getItem(SCAN_IN_PROGRESS_KEY) === "1";
+        sessionStorage.removeItem(SCAN_IN_PROGRESS_KEY);
+    } catch (_) {}
+
     // Start at ₹0 — amounts appear only after the user clicks Run scan.
     // Same demo/credentials always produce the same totals after scan (deterministic).
     localStorage.removeItem(SCAN_CACHE_KEY);
     clearOverviewMetrics();
+
+    if (interrupted) {
+        toast("Previous scan was interrupted — click Run scan to continue", "err");
+    }
 }
 
 function selectRecoveryEta(key) {
