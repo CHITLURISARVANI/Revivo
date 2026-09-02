@@ -1474,6 +1474,98 @@ tbody tr:hover { background: #f7fbf9; }
 }
 .arch-row { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center; }
 
+/* Architecture board (redesign) */
+.arch-board {
+    padding: 1.35rem 1.35rem 1.5rem;
+    background:
+        radial-gradient(ellipse 60% 40% at 50% 0%, rgba(14, 138, 72, 0.07), transparent 60%),
+        #fff;
+}
+.arch-layer { margin-bottom: 0.15rem; }
+.arch-layer.focus .arch-card-wide { margin-bottom: 0.65rem; }
+.arch-layer-label {
+    display: inline-block;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 0.55rem;
+}
+.arch-cards {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.65rem;
+}
+.arch-card {
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 1rem 1.05rem;
+    background: var(--bg);
+    box-shadow: 0 1px 2px rgba(6, 26, 21, 0.03);
+}
+.arch-card strong {
+    display: block;
+    font-size: 0.98rem;
+    letter-spacing: -0.01em;
+    margin-bottom: 0.2rem;
+}
+.arch-card small {
+    color: var(--ink-soft);
+    font-size: 0.8rem;
+    line-height: 1.35;
+}
+.arch-card.dark {
+    background: linear-gradient(145deg, #0b3f34, #071f1a);
+    color: #eaf5f0;
+    border: none;
+}
+.arch-card.dark small { color: rgba(234, 245, 240, 0.7); }
+.arch-card.brand,
+.arch-card-wide {
+    background: linear-gradient(135deg, #0b3f34 0%, #0f5c4c 100%);
+    color: #fff;
+    border: none;
+    text-align: center;
+    padding: 1.15rem 1.2rem;
+}
+.arch-card.brand small,
+.arch-card-wide small {
+    color: rgba(234, 245, 240, 0.78);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.02em;
+}
+.arch-card-wide strong {
+    font-family: var(--display);
+    font-size: 1.35rem;
+    font-weight: 400;
+}
+.arch-connector {
+    width: 2px;
+    height: 18px;
+    margin: 0.55rem auto;
+    background: linear-gradient(180deg, rgba(15, 138, 75, 0.15), rgba(15, 138, 75, 0.55));
+    border-radius: 2px;
+}
+.arch-board .arch-engines {
+    max-width: none;
+    gap: 0.45rem;
+}
+.arch-board .arch-engines span {
+    background: #fff;
+    border: 1px solid rgba(15, 138, 75, 0.22);
+    color: var(--brand);
+    padding: 0.45rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    box-shadow: 0 1px 2px rgba(6, 26, 21, 0.04);
+}
+@media (max-width: 700px) {
+    .arch-cards { grid-template-columns: 1fr; }
+}
+
 .rules-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
