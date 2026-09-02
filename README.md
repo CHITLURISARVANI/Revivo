@@ -16,9 +16,11 @@ Merchants lose **1–3% of GMV** to five silent leaks they rarely check: authori
 
 **https://revivo-n6c0.onrender.com**
 
-> Free-tier hosting may take **30–60s** to wake on first load — refresh once if needed.
+> **Cold start:** Free Render sleeps when idle. First open can take **30–60s** — the in-app wake screen covers this. For live judging, open the URL once **before** your slot so the service is warm.
 
 **Click “Continue with demo data” → “Run scan”** to see all 5 engines detect and recover **₹75,900** across **15** simulated issues.
+
+**Judge path after scan:** Overview (before→after) → **Escalations** (Failure Recovery) → **Audit** (proof).
 
 ---
 
@@ -58,7 +60,7 @@ Not decoration — three places where judgment changes the action:
 | **Dispute Defender** | Scores **dispute winnability** from evidence and builds structured contest packages |
 | **Checkout Rescuer** | Generates personalized **Hinglish** recovery messages with payment links |
 
-All three have a **rules-based fallback** if no OpenAI key is set — the demo runs without one.
+All three have a **rules-based fallback** if no OpenAI key is set — the demo runs without one. With `OPENAI_API_KEY` set on Render, `/health` shows `"ai_api": "connected"` instead of `"fallback"`.
 
 ---
 
@@ -73,6 +75,23 @@ Every auto-action is gated by `data/boundaries.json`. Above threshold → **esca
 | Dispute Defender | Auto-contest only below **₹25,000**; **never** auto for **fraud** |
 | Refund Resolver | Auto-reissue only below **₹10,000** |
 | Checkout Rescuer | Recovery only for orders ≥ **₹500** |
+
+---
+
+## Failure Recovery (human-in-the-loop)
+
+Revivo is built so **auto-act never silently fails** on risky cases:
+
+1. **Detect** the leak (authorized payment, dispute, refund, etc.)
+2. **Diagnose** with AI / rules (retryable? winnable?)
+3. **Decide** against merchant boundaries
+4. If safe → **execute** and write an audit row  
+   If amount, category, or risk exceeds rules → **escalate** to a human (no auto money move)
+5. Merchant resolves the escalation; the **append-only audit trail** still records detect → diagnose → decide → escalate
+
+**Demo proof:** after one scan you get **3 escalations** (high-value / high-risk) alongside **₹75,900** recovered. Open **Escalations** then **Audit** to see the Failure Recovery path end-to-end.
+
+This is intentional product design for Track 03 — agents that handle money must know when **not** to act.
 
 ---
 

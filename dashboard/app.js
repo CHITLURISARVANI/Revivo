@@ -25,7 +25,7 @@ const PAGE_META = {
     scan: { title: "Scan", desc: "Run the recovery agent across five engines" },
     insights: { title: "Insights", desc: "Charts and funnel for recovered revenue" },
     issues: { title: "Issues", desc: "Every leak found and the action taken" },
-    escalations: { title: "Escalations", desc: "Needs a human — above your auto limits" },
+    escalations: { title: "Failure Recovery", desc: "Escalate risky cases — never silent fail on money" },
     audit: { title: "Audit", desc: "Append-only trail of every decision" },
     architecture: { title: "Architecture", desc: "How Revivo is wired" },
     rules: { title: "Rules", desc: "Merchant boundaries that keep actions safe" },
