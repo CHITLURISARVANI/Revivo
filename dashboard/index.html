@@ -41,8 +41,24 @@
             <div class="cine-content">
                 <p class="cine-eyebrow">Razorpay AI Buildathon 2026 · Track 03</p>
                 <p class="cine-brand">Revivo</p>
-                <h1 class="cine-headline">Find the revenue<br><em>you’re already owed.</em></h1>
-                <p class="cine-sub">An AI agent that detects silent payment leaks and recovers them through Razorpay APIs — within your rules.</p>
+                <h1 class="cine-headline">Get back money<br><em>stuck in failed payments.</em></h1>
+                <p class="cine-sub">Revivo finds payment problems shops miss — and helps recover them automatically, with your approval on big or risky cases.</p>
+
+                <aside class="cine-preview" aria-label="Demo result preview">
+                    <p class="cine-preview-kicker">Live demo preview</p>
+                    <p class="cine-preview-title">Result after one scan</p>
+                    <p class="cine-preview-amount">₹75,900 <span>recovered</span></p>
+                    <div class="cine-preview-meta">
+                        <span>15 issues found</span>
+                        <span>₹36,200 pending</span>
+                        <span>3 need review</span>
+                    </div>
+                    <div class="cine-preview-bar" aria-hidden="true">
+                        <i style="width:62%"></i>
+                    </div>
+                    <p class="cine-preview-note">Proof before you click — same numbers the scan returns</p>
+                </aside>
+
                 <div class="cine-cta">
                     <button type="button" class="btn btn-primary btn-lg" id="btn-enter-revivo">
                         Enter Revivo
@@ -53,7 +69,7 @@
                     </button>
                 </div>
                 <div class="cine-flow" aria-hidden="true">
-                    <span>Detect</span><i></i><span>Diagnose</span><i></i><span>Decide</span><i></i><span>Recover</span>
+                    <span>Find</span><i></i><span>Decide</span><i></i><span>Act</span><i></i><span>Prove</span>
                 </div>
             </div>
         </section>
@@ -64,14 +80,14 @@
                     <span class="mark">R</span>
                     <span>Revivo</span>
                 </div>
-                <h1>Connect once.<br>Recover on every scan.</h1>
-                <p>Five engines. Merchant boundaries. Full audit trail. Demo recovers <strong>₹75,900</strong> across 15 issues in one click.</p>
+                <h1>Link Razorpay once.<br>Recover money on every scan.</h1>
+                <p>In the demo, one scan recovers <strong>₹75,900</strong> across <strong>15 problems</strong> — failed payments, stuck refunds, disputes, and abandoned checkouts.</p>
                 <ul class="auth-bullets">
-                    <li><i data-lucide="scan-search"></i><span>Detect leaks across payments, disputes, refunds, checkouts</span></li>
-                    <li><i data-lucide="brain"></i><span>Diagnose with AI — retry only what can win</span></li>
-                    <li><i data-lucide="shield-check"></i><span>Act within merchant boundaries + full audit trail</span></li>
+                    <li><i data-lucide="scan-search"></i><span>Finds money stuck after customers try to pay</span></li>
+                    <li><i data-lucide="brain"></i><span>Uses AI to decide what is worth retrying or contesting</span></li>
+                    <li><i data-lucide="shield-check"></i><span>Follows your limits — big or risky cases need a human yes</span></li>
                 </ul>
-                <div class="auth-story-foot">Razorpay AI Buildathon 2026 · Track 03 · <span id="build-id-auth">Build 20260903-b13</span></div>
+                <div class="auth-story-foot">Razorpay AI Buildathon 2026 · Track 03 · <span id="build-id-auth">Build 20260903-b14</span></div>
             </aside>
 
             <div class="auth-panel">
@@ -136,7 +152,7 @@
                     <div>
                         <strong>Revivo</strong>
                         <small>Revenue recovery</small>
-                        <span class="build-pill" id="build-id" title="Deployed build">Build b13</span>
+                        <span class="build-pill" id="build-id" title="Deployed build">Build b14</span>
                     </div>
                 </div>
                 <nav class="nav" id="sidebar-nav">
@@ -173,7 +189,7 @@
                     </div>
                 </div>
                 <div class="topbar-right">
-                    <span class="build-pill topbar-build" id="build-id-top" title="Deployed build">Build b13</span>
+                    <span class="build-pill topbar-build" id="build-id-top" title="Deployed build">Build b14</span>
                     <button type="button" class="btn btn-ghost" id="reset-btn"><i data-lucide="rotate-ccw"></i> Reset</button>
                     <button type="button" class="btn btn-primary" id="scan-btn"><i data-lucide="play"></i> Run scan</button>
                 </div>
@@ -214,7 +230,7 @@
                             <span class="hint">Capture auto-max — live preview</span>
                         </div>
                         <label class="whatif-slider">
-                            <span>Auto-capture max: <strong id="whatif-threshold-label">₹50,000</strong></span>
+                            <span>Auto-act limit (capture): <strong id="whatif-threshold-label">₹50,000</strong></span>
                             <input type="range" id="whatif-capture" min="10000" max="100000" step="5000" value="50000">
                         </label>
                         <p class="whatif-result" id="whatif-result">Run a scan to simulate threshold impact.</p>
@@ -222,9 +238,9 @@
 
                     <div class="hero-grid">
                         <article class="hero-card">
-                            <p class="kicker">Silent leaks</p>
-                            <h2>Merchants lose 1–3% of GMV to five cracks they never check.</h2>
-                            <p>Authorized-not-captured. Failed retries. Uncontested disputes. Stuck refunds. Abandoned checkouts.</p>
+                            <p class="kicker">Hidden losses</p>
+                            <h2>Shops often lose 1–3% of sales to payment problems nobody checks.</h2>
+                            <p>Payment approved but money never collected. Temporary bank failure never retried. Dispute never answered. Refund stuck. Customer left checkout.</p>
                             <div class="hero-actions">
                                 <button type="button" class="btn btn-primary" id="home-scan-btn"><i data-lucide="radar"></i> Scan my Razorpay</button>
                                 <button type="button" class="btn btn-secondary" data-goto="architecture"><i data-lucide="info"></i> How it works</button>
@@ -614,7 +630,7 @@
                             <div class="arch-cards">
                                 <div class="arch-card">
                                     <strong>AI layer</strong>
-                                    <small>Classify · winnability · Hinglish</small>
+                                    <small>Classify failures · win chance · Hinglish SMS</small>
                                 </div>
                                 <div class="arch-card">
                                     <strong>Boundaries</strong>
@@ -655,7 +671,7 @@
                             <div class="rule-card">
                                 <h4>Capture Guardian</h4>
                                 <ul>
-                                    <li><strong>Auto-capture max:</strong> ₹50,000</li>
+                                    <li><strong>Auto-act max:</strong> ₹50,000 <em class="rule-hint">(above this → ask a human)</em></li>
                                     <li><strong>Min age:</strong> 6 hours</li>
                                 </ul>
                             </div>
@@ -671,7 +687,7 @@
                                 <h4>Dispute Defender</h4>
                                 <ul>
                                     <li><strong>Auto-contest max:</strong> ₹25,000</li>
-                                    <li><strong>Min winnability:</strong> 0.6</li>
+                                    <li><strong>Min win chance:</strong> 0.6 <em class="rule-hint">(how likely we can win the dispute)</em></li>
                                     <li><strong>Never auto:</strong> fraud</li>
                                 </ul>
                             </div>

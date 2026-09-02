@@ -45,13 +45,13 @@ const RECOVERY_ETA = {
         range: "1–30 min",
         speed: 92,
         speedLabel: "Very fast",
-        note: "Fastest path — the payment was already authorized on Razorpay.",
+        note: "Fastest path — the customer already paid, but money wasn’t collected yet.",
         steps: [
-            "Detect authorized-but-not-captured payments",
-            "Auto-capture within your merchant rules",
-            "Funds settle to the merchant account",
+            "Find payments that were approved but not collected",
+            "Collect automatically if under your money limit",
+            "Money lands in the shop’s Razorpay account",
         ],
-        window: "Window: act inside Razorpay’s capture deadline (~5 days)",
+        window: "Time limit: collect within ~5 days or Razorpay may auto-cancel it",
     },
     retry_strategist: {
         kicker: "Retry Strategist",
@@ -276,7 +276,7 @@ function whySteps(issue) {
         );
     }
     if (issue.ai_winnability_score != null) {
-        diagnoseParts.push(`winnability ${Number(issue.ai_winnability_score).toFixed(2)}`);
+        diagnoseParts.push(`win chance ${Number(issue.ai_winnability_score).toFixed(2)}`);
     }
     if (issue.ai_reasoning) diagnoseParts.push(String(issue.ai_reasoning));
     else if (issue.diagnosis) diagnoseParts.push(String(issue.diagnosis));
@@ -734,7 +734,7 @@ async function animateSteps() {
     steps.forEach((li) => li.classList.remove("active", "done"));
     for (const li of steps) {
         li.classList.add("active");
-        await sleep(280);
+        await sleep(110);
         li.classList.remove("active");
         li.classList.add("done");
     }
@@ -983,12 +983,13 @@ async function runScan() {
         const res = await fetch("/api/scan", { method: "POST" });
         if (!res.ok) throw new Error("HTTP " + res.status);
         const data = await res.json();
-        await sleep(250);
         lastScan = data;
         cacheScan(data);
         renderAll(data);
         document.getElementById("loading")?.classList.add("hidden");
         document.getElementById("scan-results")?.classList.remove("hidden");
+        // Land judges on Overview so before→after + charts are immediately visible
+        showView("home");
         toast("Scan complete — " + formatINR(data.summary?.amount_recovered_inr) + " recovered", "ok");
         refreshIcons();
     } catch (err) {
@@ -1145,7 +1146,7 @@ async function loadRules() {
         const inr = (n) => "₹" + Number(n || 0).toLocaleString("en-IN");
         const engines = [
             ["Capture Guardian", [
-                ["Auto-capture max", inr(cfg.capture_guardian?.auto_capture_threshold_inr)],
+                ["Auto-act max", inr(cfg.capture_guardian?.auto_capture_threshold_inr)],
                 ["Min age", (cfg.capture_guardian?.min_authorized_age_hours || 0) + " hours"],
             ]],
             ["Retry Strategist", [
@@ -1155,7 +1156,7 @@ async function loadRules() {
             ]],
             ["Dispute Defender", [
                 ["Auto-contest max", inr(cfg.dispute_defender?.auto_contest_threshold_inr)],
-                ["Min winnability", cfg.dispute_defender?.min_winnability_score ?? 0.6],
+                ["Min win chance", cfg.dispute_defender?.min_winnability_score ?? 0.6],
                 ["Never auto", (cfg.dispute_defender?.never_auto_contest_categories || ["fraud"]).join(", ")],
             ]],
             ["Refund Resolver", [
