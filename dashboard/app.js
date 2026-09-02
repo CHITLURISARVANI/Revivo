@@ -276,8 +276,92 @@ function showAuthStep(step) {
     refreshIcons();
 }
 
+function showCinematic() {
+    document.getElementById("cinematic")?.classList.remove("hidden");
+    document.getElementById("auth-layout")?.classList.add("hidden");
+    refreshIcons(document.getElementById("cinematic"));
+}
+
+function enterConnectFlow(step) {
+    document.getElementById("cinematic")?.classList.add("hidden");
+    document.getElementById("auth-layout")?.classList.remove("hidden");
+    showAuthStep(step || "auth-choice");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+async function ensureServerAwake() {
+    const gate = document.getElementById("wake-gate");
+    const fill = document.getElementById("wake-fill");
+    const fine = document.getElementById("wake-fine");
+    const copy = document.getElementById("wake-copy");
+    const track = gate?.querySelector(".wake-track");
+
+    const started = Date.now();
+    let pct = 8;
+    let timer = null;
+
+    const bump = (next, msg) => {
+        pct = Math.max(pct, next);
+        if (fill) fill.style.width = pct + "%";
+        if (track) track.setAttribute("aria-valuenow", String(pct));
+        if (msg && fine) fine.textContent = msg;
+    };
+
+    const quick = async () => {
+        const ctrl = new AbortController();
+        const t = setTimeout(() => ctrl.abort(), 2500);
+        try {
+            const res = await fetch("/health", { signal: ctrl.signal, cache: "no-store" });
+            clearTimeout(t);
+            return res.ok;
+        } catch {
+            clearTimeout(t);
+            return false;
+        }
+    };
+
+    if (await quick()) return true;
+
+    gate?.classList.remove("hidden");
+    bump(12, "Server is cold — starting up…");
+    timer = setInterval(() => {
+        const elapsed = Date.now() - started;
+        const target = Math.min(92, 12 + Math.floor(elapsed / 450));
+        bump(target);
+        if (elapsed > 15000 && copy) {
+            copy.textContent = "Still waking free hosting — almost there. First load after sleep can take up to a minute.";
+        }
+    }, 400);
+
+    const deadline = Date.now() + 90000;
+    let ok = false;
+    while (Date.now() < deadline) {
+        await sleep(1800);
+        try {
+            const res = await fetch("/health", { cache: "no-store" });
+            if (res.ok) {
+                ok = true;
+                bump(100, "Online — loading Revivo");
+                break;
+            }
+            bump(pct + 2, "Waiting for health check…");
+        } catch {
+            bump(pct + 1, "Retrying connection…");
+        }
+    }
+
+    clearInterval(timer);
+    await sleep(350);
+    gate?.classList.add("hidden");
+    if (!ok) {
+        toast("Server is slow to wake — try refreshing once", "err");
+    }
+    return ok;
+}
+
 function enterApp(session) {
     saveSession(session);
+    document.getElementById("wake-gate")?.classList.add("hidden");
     document.getElementById("auth-gate")?.classList.add("hidden");
     document.getElementById("app-shell")?.classList.remove("hidden");
     const name = session.businessName || session.email || "Merchant";
@@ -294,7 +378,7 @@ function showAuthGate() {
     document.getElementById("auth-gate")?.classList.remove("hidden");
     document.querySelector(".sidebar")?.classList.remove("open");
     document.getElementById("sidebar-backdrop")?.classList.remove("show");
-    showAuthStep("auth-choice");
+    showCinematic();
 }
 
 function connectRazorpay(demo) {
@@ -1044,21 +1128,28 @@ function selectRecoveryEta(key) {
     }
 }
 
-function boot() {
+async function boot() {
     refreshIcons();
     selectRecoveryEta("capture_guardian");
     // Rules must load regardless of auth / scan state
     loadRules();
+
+    await ensureServerAwake();
+
     const session = getSession();
     if (session?.razorpayConnected) {
         enterApp(session);
     } else {
         showAuthGate();
-        if (session && !session.razorpayConnected) showAuthStep("auth-razorpay");
+        if (session && !session.razorpayConnected) {
+            enterConnectFlow("auth-razorpay");
+        }
     }
 }
 
 // Events
+document.getElementById("btn-enter-revivo")?.addEventListener("click", () => enterConnectFlow("auth-choice"));
+document.getElementById("btn-cine-demo")?.addEventListener("click", () => enterConnectFlow("auth-razorpay"));
 document.getElementById("btn-razorpay-path")?.addEventListener("click", () => showAuthStep("auth-razorpay"));
 document.getElementById("btn-signup-path")?.addEventListener("click", () => showAuthStep("auth-signup"));
 document.getElementById("back-from-rzp")?.addEventListener("click", () => showAuthStep("auth-choice"));

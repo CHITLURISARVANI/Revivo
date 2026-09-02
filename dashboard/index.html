@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Revivo — Revenue Recovery</title>
+    <title>Revivo — AI Revenue Recovery</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="https://unpkg.com/lucide@0.469.0"></script>
@@ -15,22 +15,63 @@
     <!-- Toast -->
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
+    <!-- Cold-start wake (Render free tier) -->
+    <div id="wake-gate" class="wake-gate hidden" aria-live="polite" aria-busy="true">
+        <div class="wake-shell">
+            <div class="wake-orb" aria-hidden="true"></div>
+            <p class="wake-brand">Revivo</p>
+            <h1 class="wake-title">Waking the recovery agent…</h1>
+            <p class="wake-copy" id="wake-copy">Free hosting sleeps when idle. This usually takes 20–45 seconds — hang tight.</p>
+            <div class="wake-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="8">
+                <div class="wake-fill" id="wake-fill"></div>
+            </div>
+            <p class="wake-fine" id="wake-fine">Checking server health…</p>
+        </div>
+    </div>
+
     <!-- AUTH -->
     <div id="auth-gate" class="auth-gate">
-        <div class="auth-layout">
+        <!-- Cinematic brand-first first viewport -->
+        <section id="cinematic" class="cinematic" aria-label="Revivo intro">
+            <div class="cine-atmosphere" aria-hidden="true">
+                <div class="cine-glow cine-glow-a"></div>
+                <div class="cine-glow cine-glow-b"></div>
+                <div class="cine-grid"></div>
+            </div>
+            <div class="cine-content">
+                <p class="cine-eyebrow">Razorpay AI Buildathon 2026 · Track 03</p>
+                <p class="cine-brand">Revivo</p>
+                <h1 class="cine-headline">Find the revenue<br><em>you’re already owed.</em></h1>
+                <p class="cine-sub">An AI agent that detects silent payment leaks and recovers them through Razorpay APIs — within your rules.</p>
+                <div class="cine-cta">
+                    <button type="button" class="btn btn-primary btn-lg" id="btn-enter-revivo">
+                        Enter Revivo
+                        <i data-lucide="arrow-right"></i>
+                    </button>
+                    <button type="button" class="btn btn-ghost-light" id="btn-cine-demo">
+                        Quick demo path
+                    </button>
+                </div>
+                <div class="cine-flow" aria-hidden="true">
+                    <span>Detect</span><i></i><span>Diagnose</span><i></i><span>Decide</span><i></i><span>Recover</span>
+                </div>
+            </div>
+        </section>
+
+        <div id="auth-layout" class="auth-layout hidden">
             <aside class="auth-story">
                 <div class="auth-story-brand">
                     <span class="mark">R</span>
                     <span>Revivo</span>
                 </div>
-                <h1>Find the revenue<br>you’re already owed.</h1>
-                <p>An AI agent that plugs into Razorpay, detects five silent leaks, and recovers money within your rules.</p>
+                <h1>Connect once.<br>Recover on every scan.</h1>
+                <p>Five engines. Merchant boundaries. Full audit trail. Demo recovers <strong>₹75,900</strong> across 15 issues in one click.</p>
                 <ul class="auth-bullets">
                     <li><i data-lucide="scan-search"></i><span>Detect leaks across payments, disputes, refunds, checkouts</span></li>
                     <li><i data-lucide="brain"></i><span>Diagnose with AI — retry only what can win</span></li>
                     <li><i data-lucide="shield-check"></i><span>Act within merchant boundaries + full audit trail</span></li>
                 </ul>
-                <div class="auth-story-foot">Razorpay AI Buildathon 2026 · Track 03 · <span id="build-id-auth">Build 20260830-b7</span></div>
+                <div class="auth-story-foot">Razorpay AI Buildathon 2026 · Track 03 · <span id="build-id-auth">Build 20260902-b8</span></div>
             </aside>
 
             <div class="auth-panel">
@@ -85,7 +126,7 @@
                     <div>
                         <strong>Revivo</strong>
                         <small>Revenue recovery</small>
-                        <span class="build-pill" id="build-id" title="Deployed build">Build b7</span>
+                        <span class="build-pill" id="build-id" title="Deployed build">Build b8</span>
                     </div>
                 </div>
                 <nav class="nav" id="sidebar-nav">
@@ -122,7 +163,7 @@
                     </div>
                 </div>
                 <div class="topbar-right">
-                    <span class="build-pill topbar-build" id="build-id-top" title="Deployed build">Build b7</span>
+                    <span class="build-pill topbar-build" id="build-id-top" title="Deployed build">Build b8</span>
                     <button type="button" class="btn btn-ghost" id="reset-btn"><i data-lucide="rotate-ccw"></i> Reset</button>
                     <button type="button" class="btn btn-primary" id="scan-btn"><i data-lucide="play"></i> Run scan</button>
                 </div>
