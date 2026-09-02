@@ -323,13 +323,16 @@ async function ensureServerAwake() {
     if (await quick()) return true;
 
     gate?.classList.remove("hidden");
-    bump(12, "Server is cold — starting up…");
+    bump(12, "Initializing engines…");
     timer = setInterval(() => {
         const elapsed = Date.now() - started;
         const target = Math.min(92, 12 + Math.floor(elapsed / 450));
         bump(target);
-        if (elapsed > 15000 && copy) {
-            copy.textContent = "Still waking free hosting — almost there. First load after sleep can take up to a minute.";
+        if (elapsed > 12000 && copy) {
+            copy.textContent = "Almost ready — preparing your recovery workspace.";
+        }
+        if (elapsed > 25000 && fine) {
+            fine.textContent = "Finalizing secure session…";
         }
     }, 400);
 
@@ -344,9 +347,9 @@ async function ensureServerAwake() {
                 bump(100, "Online — loading Revivo");
                 break;
             }
-            bump(pct + 2, "Waiting for health check…");
+            bump(pct + 2, "Warming recovery engines…");
         } catch {
-            bump(pct + 1, "Retrying connection…");
+            bump(pct + 1, "Reconnecting workspace…");
         }
     }
 
@@ -354,7 +357,7 @@ async function ensureServerAwake() {
     await sleep(350);
     gate?.classList.add("hidden");
     if (!ok) {
-        toast("Server is slow to wake — try refreshing once", "err");
+        toast("Taking longer than usual — refresh once", "err");
     }
     return ok;
 }
@@ -1148,12 +1151,15 @@ async function boot() {
 }
 
 // Events
-document.getElementById("btn-enter-revivo")?.addEventListener("click", () => enterConnectFlow("auth-choice"));
-document.getElementById("btn-cine-demo")?.addEventListener("click", () => enterConnectFlow("auth-razorpay"));
+document.getElementById("btn-enter-revivo")?.addEventListener("click", () => enterConnectFlow("auth-razorpay"));
+document.getElementById("btn-cine-demo")?.addEventListener("click", () => {
+    document.getElementById("cinematic")?.classList.add("hidden");
+    connectRazorpay(true);
+});
 document.getElementById("btn-razorpay-path")?.addEventListener("click", () => showAuthStep("auth-razorpay"));
 document.getElementById("btn-signup-path")?.addEventListener("click", () => showAuthStep("auth-signup"));
-document.getElementById("back-from-rzp")?.addEventListener("click", () => showAuthStep("auth-choice"));
-document.getElementById("back-from-signup")?.addEventListener("click", () => showAuthStep("auth-choice"));
+document.getElementById("btn-auth-more")?.addEventListener("click", () => showAuthStep("auth-signup"));
+document.getElementById("back-from-signup")?.addEventListener("click", () => showAuthStep("auth-razorpay"));
 document.getElementById("btn-connect-rzp")?.addEventListener("click", () => connectRazorpay(false));
 document.getElementById("btn-demo-mode")?.addEventListener("click", () => connectRazorpay(true));
 document.getElementById("btn-create-account")?.addEventListener("click", createAccount);

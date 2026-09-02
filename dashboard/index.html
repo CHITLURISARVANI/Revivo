@@ -20,12 +20,12 @@
         <div class="wake-shell">
             <div class="wake-orb" aria-hidden="true"></div>
             <p class="wake-brand">Revivo</p>
-            <h1 class="wake-title">Waking the recovery agent…</h1>
-            <p class="wake-copy" id="wake-copy">Free hosting sleeps when idle. This usually takes 20–45 seconds — hang tight.</p>
+            <h1 class="wake-title">Bringing the recovery agent online</h1>
+            <p class="wake-copy" id="wake-copy">Secure workspace spinning up. Most sessions are ready in under a minute.</p>
             <div class="wake-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="8">
                 <div class="wake-fill" id="wake-fill"></div>
             </div>
-            <p class="wake-fine" id="wake-fine">Checking server health…</p>
+            <p class="wake-fine" id="wake-fine">Initializing engines…</p>
         </div>
     </div>
 
@@ -49,7 +49,7 @@
                         <i data-lucide="arrow-right"></i>
                     </button>
                     <button type="button" class="btn btn-ghost-light" id="btn-cine-demo">
-                        Quick demo path
+                        Start demo now
                     </button>
                 </div>
                 <div class="cine-flow" aria-hidden="true">
@@ -71,15 +71,14 @@
                     <li><i data-lucide="brain"></i><span>Diagnose with AI — retry only what can win</span></li>
                     <li><i data-lucide="shield-check"></i><span>Act within merchant boundaries + full audit trail</span></li>
                 </ul>
-                <div class="auth-story-foot">Razorpay AI Buildathon 2026 · Track 03 · <span id="build-id-auth">Build 20260902-b9</span></div>
+                <div class="auth-story-foot">Razorpay AI Buildathon 2026 · Track 03 · <span id="build-id-auth">Build 20260902-b10</span></div>
             </aside>
 
             <div class="auth-panel">
-                <div id="auth-choice" class="auth-card">
-                    <p class="kicker">Get started</p>
-                    <h2>Connect your merchant account</h2>
-                    <p class="lead">Recommended: connect Razorpay first — that’s where the money lives.</p>
-
+                <div id="auth-choice" class="auth-card hidden">
+                    <p class="kicker">Workspace</p>
+                    <h2>How do you want to start?</h2>
+                    <p class="lead">Pitch path uses demo data. Live path uses Razorpay test keys.</p>
                     <button type="button" class="btn btn-primary btn-block" id="btn-razorpay-path">
                         <i data-lucide="link-2"></i>
                         Connect with Razorpay
@@ -91,16 +90,27 @@
                     </button>
                 </div>
 
-                <div id="auth-razorpay" class="auth-card hidden">
-                    <button type="button" class="link-back" id="back-from-rzp"><i data-lucide="arrow-left"></i> Back</button>
-                    <p class="kicker">Connect</p>
-                    <h2>Razorpay credentials</h2>
-                    <p class="lead">Use test keys, or continue with demo data for the pitch.</p>
-                    <label class="field"><span>Key ID</span><input id="rzp-key-id" type="text" placeholder="rzp_test_…" autocomplete="off"></label>
-                    <label class="field"><span>Key Secret</span><input id="rzp-key-secret" type="password" placeholder="••••••••" autocomplete="off"></label>
-                    <button type="button" class="btn btn-primary btn-block" id="btn-connect-rzp"><i data-lucide="plug"></i> Connect & open app</button>
-                    <button type="button" class="btn btn-secondary btn-block" id="btn-demo-mode"><i data-lucide="play"></i> Continue with demo data</button>
-                    <p class="fine">Demo session stays in this browser. Backend uses simulated data unless `.env` keys are set.</p>
+                <div id="auth-razorpay" class="auth-card">
+                    <p class="kicker">One step to the demo</p>
+                    <h2>Open your recovery workspace</h2>
+                    <p class="lead">Judges path: start on seeded Razorpay data. No keys required.</p>
+
+                    <button type="button" class="btn btn-primary btn-block btn-lg" id="btn-demo-mode">
+                        <i data-lucide="play"></i>
+                        Continue with demo data
+                    </button>
+
+                    <div class="auth-divider"><span>or use test keys</span></div>
+
+                    <details class="auth-keys">
+                        <summary>Connect Razorpay test keys</summary>
+                        <label class="field"><span>Key ID</span><input id="rzp-key-id" type="text" placeholder="rzp_test_…" autocomplete="off"></label>
+                        <label class="field"><span>Key Secret</span><input id="rzp-key-secret" type="password" placeholder="••••••••" autocomplete="off"></label>
+                        <button type="button" class="btn btn-secondary btn-block" id="btn-connect-rzp"><i data-lucide="plug"></i> Connect & open app</button>
+                    </details>
+
+                    <p class="fine">Demo actions are tagged <code>[SIMULATED]</code> in Audit. Same engines and boundaries as live.</p>
+                    <button type="button" class="link-back" id="btn-auth-more" style="margin-top:0.75rem"><i data-lucide="user-plus"></i> Create account instead</button>
                 </div>
 
                 <div id="auth-signup" class="auth-card hidden">
@@ -126,7 +136,7 @@
                     <div>
                         <strong>Revivo</strong>
                         <small>Revenue recovery</small>
-                        <span class="build-pill" id="build-id" title="Deployed build">Build b9</span>
+                        <span class="build-pill" id="build-id" title="Deployed build">Build b10</span>
                     </div>
                 </div>
                 <nav class="nav" id="sidebar-nav">
@@ -163,7 +173,7 @@
                     </div>
                 </div>
                 <div class="topbar-right">
-                    <span class="build-pill topbar-build" id="build-id-top" title="Deployed build">Build b9</span>
+                    <span class="build-pill topbar-build" id="build-id-top" title="Deployed build">Build b10</span>
                     <button type="button" class="btn btn-ghost" id="reset-btn"><i data-lucide="rotate-ccw"></i> Reset</button>
                     <button type="button" class="btn btn-primary" id="scan-btn"><i data-lucide="play"></i> Run scan</button>
                 </div>
@@ -407,7 +417,14 @@
 
                 <!-- INSIGHTS -->
                 <section class="view" id="view-insights">
-                    <div class="panel" id="insights-empty">
+                    <div class="view-intro">
+                        <div>
+                            <p class="kicker">Analytics</p>
+                            <h2 class="view-title">Recovery proof</h2>
+                            <p class="lead">Where money came from — and how much is still in motion.</p>
+                        </div>
+                    </div>
+                    <div class="panel panel-premium" id="insights-empty">
                         <div class="empty-state">
                             <i data-lucide="line-chart"></i>
                             <h3>No insights yet</h3>
@@ -455,11 +472,18 @@
 
                 <!-- ISSUES -->
                 <section class="view" id="view-issues">
-                    <article class="panel">
+                    <div class="view-intro">
+                        <div>
+                            <p class="kicker">Action log</p>
+                            <h2 class="view-title">Every leak Revivo found</h2>
+                            <p class="lead">Engine · action · result · AI reasoning — the full recovery ledger.</p>
+                        </div>
+                    </div>
+                    <article class="panel panel-premium">
                         <div class="empty-state" id="issues-empty">
                             <i data-lucide="list-checks"></i>
                             <h3>No issues yet</h3>
-                            <p>Scan first to populate this table.</p>
+                            <p>Run a scan to populate this ledger.</p>
                         </div>
                         <div class="table-wrap hidden" id="issues-wrap">
                             <p class="hint issues-hint">Columns: Engine · Issue · ID · Amount · Action · Result · AI <span>(scroll right on small screens)</span></p>
@@ -483,8 +507,14 @@
 
                 <!-- ESCALATIONS -->
                 <section class="view" id="view-escalations">
-                    <article class="panel">
-                        <p class="lead">Above auto-action thresholds — Revivo did not execute these.</p>
+                    <div class="view-intro">
+                        <div>
+                            <p class="kicker">Human in the loop</p>
+                            <h2 class="view-title">Needs your decision</h2>
+                            <p class="lead">Above threshold or high-risk — Revivo stopped and asked a merchant.</p>
+                        </div>
+                    </div>
+                    <article class="panel panel-premium">
                         <div id="escalations-body" class="escalation-list">
                             <div class="empty-state" id="escalations-empty">
                                 <i data-lucide="shield-check"></i>
@@ -497,8 +527,14 @@
 
                 <!-- AUDIT -->
                 <section class="view" id="view-audit">
-                    <article class="panel">
-                        <p class="lead">Append-only trail — detect → diagnose → decide → execute. Demo mode appends <code>[SIMULATED]</code> on execute steps; live Razorpay calls omit that tag.</p>
+                    <div class="view-intro">
+                        <div>
+                            <p class="kicker">Compliance</p>
+                            <h2 class="view-title">Append-only audit trail</h2>
+                            <p class="lead">Detect → diagnose → decide → execute. Demo tags execute steps <code>[SIMULATED]</code>.</p>
+                        </div>
+                    </div>
+                    <article class="panel panel-premium">
                         <div id="audit-trail" class="audit-list">
                             <div class="empty-state" id="audit-empty">
                                 <i data-lucide="scroll-text"></i>
