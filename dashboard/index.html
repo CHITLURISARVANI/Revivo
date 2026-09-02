@@ -71,7 +71,7 @@
                     <li><i data-lucide="brain"></i><span>Diagnose with AI — retry only what can win</span></li>
                     <li><i data-lucide="shield-check"></i><span>Act within merchant boundaries + full audit trail</span></li>
                 </ul>
-                <div class="auth-story-foot">Razorpay AI Buildathon 2026 · Track 03 · <span id="build-id-auth">Build 20260902-b11</span></div>
+                <div class="auth-story-foot">Razorpay AI Buildathon 2026 · Track 03 · <span id="build-id-auth">Build 20260903-b12</span></div>
             </aside>
 
             <div class="auth-panel">
@@ -136,7 +136,7 @@
                     <div>
                         <strong>Revivo</strong>
                         <small>Revenue recovery</small>
-                        <span class="build-pill" id="build-id" title="Deployed build">Build b11</span>
+                        <span class="build-pill" id="build-id" title="Deployed build">Build b12</span>
                     </div>
                 </div>
                 <nav class="nav" id="sidebar-nav">
@@ -173,7 +173,7 @@
                     </div>
                 </div>
                 <div class="topbar-right">
-                    <span class="build-pill topbar-build" id="build-id-top" title="Deployed build">Build b11</span>
+                    <span class="build-pill topbar-build" id="build-id-top" title="Deployed build">Build b12</span>
                     <button type="button" class="btn btn-ghost" id="reset-btn"><i data-lucide="rotate-ccw"></i> Reset</button>
                     <button type="button" class="btn btn-primary" id="scan-btn"><i data-lucide="play"></i> Run scan</button>
                 </div>
@@ -559,30 +559,76 @@
 
                 <!-- ARCHITECTURE -->
                 <section class="view" id="view-architecture">
-                    <article class="panel">
-                        <div class="panel-head">
-                            <h3>System architecture</h3>
-                            <span class="hint">Same loop for every issue</span>
+                    <div class="view-intro">
+                        <div>
+                            <p class="kicker">System</p>
+                            <h2 class="view-title">How Revivo is wired</h2>
+                            <p class="lead">One orchestrator · five engines · AI where it matters · boundaries before every action · full audit.</p>
                         </div>
-                        <div class="arch-flow">
-                            <div class="arch-node dark">Merchant</div>
-                            <div class="arch-edge"></div>
-                            <div class="arch-node">Web app + API</div>
-                            <div class="arch-edge"></div>
-                            <div class="arch-node brand">Orchestrator</div>
-                            <div class="arch-edge"></div>
+                    </div>
+
+                    <article class="panel panel-premium arch-board">
+                        <div class="arch-layer">
+                            <span class="arch-layer-label">Surface</span>
+                            <div class="arch-cards">
+                                <div class="arch-card dark">
+                                    <strong>Merchant</strong>
+                                    <small>Dashboard · rules · review</small>
+                                </div>
+                                <div class="arch-card">
+                                    <strong>Web app + API</strong>
+                                    <small>FastAPI · scan · seed · audit</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="arch-connector" aria-hidden="true"></div>
+
+                        <div class="arch-layer focus">
+                            <span class="arch-layer-label">Brain</span>
+                            <div class="arch-card brand arch-card-wide">
+                                <strong>Orchestrator</strong>
+                                <small>detect → diagnose → decide → execute → audit</small>
+                            </div>
                             <div class="arch-engines">
-                                <span>Capture</span><span>Retry</span><span>Dispute</span><span>Refund</span><span>Checkout</span>
+                                <span>Capture Guardian</span>
+                                <span>Retry Strategist</span>
+                                <span>Dispute Defender</span>
+                                <span>Refund Resolver</span>
+                                <span>Checkout Rescuer</span>
                             </div>
-                            <div class="arch-edge"></div>
-                            <div class="arch-row">
-                                <div class="arch-node">AI layer</div>
-                                <div class="arch-node">Boundaries</div>
+                        </div>
+
+                        <div class="arch-connector" aria-hidden="true"></div>
+
+                        <div class="arch-layer">
+                            <span class="arch-layer-label">Guards</span>
+                            <div class="arch-cards">
+                                <div class="arch-card">
+                                    <strong>AI layer</strong>
+                                    <small>Classify · winnability · Hinglish</small>
+                                </div>
+                                <div class="arch-card">
+                                    <strong>Boundaries</strong>
+                                    <small>Thresholds · escalate · never fraud-auto</small>
+                                </div>
                             </div>
-                            <div class="arch-edge"></div>
-                            <div class="arch-node">Razorpay APIs</div>
-                            <div class="arch-edge"></div>
-                            <div class="arch-node">Audit ledger</div>
+                        </div>
+
+                        <div class="arch-connector" aria-hidden="true"></div>
+
+                        <div class="arch-layer">
+                            <span class="arch-layer-label">Action</span>
+                            <div class="arch-cards">
+                                <div class="arch-card dark">
+                                    <strong>Razorpay APIs</strong>
+                                    <small>Capture · links · disputes · refunds</small>
+                                </div>
+                                <div class="arch-card">
+                                    <strong>Audit ledger</strong>
+                                    <small>Append-only · [SIMULATED] in demo</small>
+                                </div>
+                            </div>
                         </div>
                     </article>
                 </section>
