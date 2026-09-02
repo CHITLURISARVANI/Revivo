@@ -1154,9 +1154,16 @@ a { color: inherit; text-decoration: none; }
     flex-wrap: wrap;
 }
 .action-banner h2, .result-banner h2, .insight-hero h2 {
-    font-size: 1.35rem;
+    font-family: var(--display);
+    font-size: 1.55rem;
+    font-weight: 400;
     letter-spacing: -0.02em;
     margin-bottom: 0.25rem;
+}
+.action-banner.panel-premium {
+    background:
+        linear-gradient(135deg, rgba(11, 63, 52, 0.06), transparent 45%),
+        #fff;
 }
 .success-tone {
     background: linear-gradient(120deg, var(--recover-soft), #fff);
@@ -1572,16 +1579,23 @@ tbody tr:hover { background: #f7fbf9; }
     gap: 0.75rem;
 }
 .rule-card {
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    padding: 0.9rem;
-    background: var(--bg);
+    border: 1px solid rgba(10, 58, 48, 0.12);
+    border-radius: 16px;
+    padding: 1rem 1.05rem;
+    background: linear-gradient(180deg, #fff, var(--bg));
     transition: transform 0.15s var(--ease), box-shadow 0.15s;
+    box-shadow: 0 1px 2px rgba(6, 26, 21, 0.03);
 }
 .rule-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
-.rule-card h4 { margin-bottom: 0.45rem; font-size: 0.9rem; }
+.rule-card h4 {
+    margin-bottom: 0.55rem;
+    font-size: 0.95rem;
+    letter-spacing: -0.01em;
+    color: var(--brand);
+}
 .rule-card ul { list-style: none; color: var(--ink-soft); font-size: 0.82rem; }
-.rule-card li { margin-bottom: 0.25rem; }
+.rule-card li { margin-bottom: 0.3rem; }
+.rule-card li strong { color: var(--ink); }
 
 .sidebar-backdrop {
     display: none;
