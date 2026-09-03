@@ -54,13 +54,13 @@ Razorpay data
 
 Not decoration — three places where judgment changes the action:
 
-| Engine | AI job |
-|---|---|
-| **Retry Strategist** | Classifies failures as **transient vs permanent** (e.g. UPI bank outage vs insufficient funds) with a confidence score |
-| **Dispute Defender** | Scores **dispute winnability** from evidence and builds structured contest packages |
-| **Checkout Rescuer** | Generates personalized **Hinglish** recovery messages with payment links |
+| Engine | Model / path | AI job |
+|---|---|---|
+| **Retry Strategist** | OpenAI **`gpt-4o-mini`** → rules fallback (`ai/classifier.py`) | Classifies failures as **transient vs permanent** (e.g. UPI bank outage vs insufficient funds) with a confidence score |
+| **Dispute Defender** | OpenAI **`gpt-4o-mini`** → rules fallback (`ai/winnability.py`, `ai/evidence_gen.py`) | Scores **dispute winnability** from evidence and builds structured contest packages |
+| **Checkout Rescuer** | OpenAI **`gpt-4o-mini`** → template fallback (`ai/message_gen.py`) | Generates personalized **Hinglish** recovery messages with payment links |
 
-All three have a **rules-based fallback** if no OpenAI key is set — the demo runs without one. With `OPENAI_API_KEY` set on Render, `/health` shows `"ai_api": "connected"` instead of `"fallback"`.
+**How to verify:** with `OPENAI_API_KEY` set, `/health` shows `"ai_api": "connected"` and live LLM calls run. Without a key, `/health` shows `"ai_api": "fallback"` and the same engines use deterministic rules/templates — demo stays fast (~1s) with the same **₹75,900** outcome. Live demo currently uses **rules fallback for scan speed**; set the key on Render if you want live LLM.
 
 ---
 
@@ -117,7 +117,7 @@ Demo mode uses seeded synthetic data (`scripts/seed_test_data.py`) and tags ever
 |---|---|
 | Backend | Python 3.11 + FastAPI |
 | Razorpay | Official `razorpay` Python SDK |
-| AI | OpenAI **gpt-4o-mini** (rules fallback) |
+| AI | OpenAI **gpt-4o-mini** for retry / dispute / checkout SMS; **rules/templates fallback** when no key |
 | Database | SQLite |
 | Dashboard | HTML + Vanilla JS + CSS |
 | Tests | pytest |
