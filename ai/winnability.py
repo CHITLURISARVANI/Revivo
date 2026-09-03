@@ -34,6 +34,9 @@ Return JSON:
 }"""
 
 
+_winnability_cache: dict = {}
+
+
 def score_dispute_winnability(dispute_data: dict, api_key: str = None) -> dict:
     """
     Score how winnable a dispute is.
@@ -45,14 +48,25 @@ def score_dispute_winnability(dispute_data: dict, api_key: str = None) -> dict:
     Returns:
         dict with winnability_score, recommendation, reasoning
     """
+    cache_key = (
+        dispute_data.get("reason_code", dispute_data.get("dispute_reason", dispute_data.get("reason", ""))),
+        bool(dispute_data.get("available_evidence", {}).get("has_tracking_number")),
+    )
+    if cache_key in _winnability_cache:
+        return _winnability_cache[cache_key].copy()
+
     key = api_key or os.getenv("OPENAI_API_KEY")
     if key:
         try:
-            return _score_with_llm(dispute_data, key)
+            result = _score_with_llm(dispute_data, key)
+            _winnability_cache[cache_key] = result
+            return result
         except Exception as e:
             logger.warning(f"LLM winnability scoring failed, using fallback: {e}")
 
-    return _score_with_rules(dispute_data)
+    result = _score_with_rules(dispute_data)
+    _winnability_cache[cache_key] = result
+    return result
 
 
 def _score_with_llm(dispute_data: dict, api_key: str) -> dict:

@@ -33,6 +33,9 @@ Return JSON:
 }"""
 
 
+_message_cache: dict = {}
+
+
 def generate_recovery_message(order_data: dict, customer_data: dict, payment_link_url: str, api_key: str = None) -> dict:
     """
     Generate a personalized Hinglish recovery message.
@@ -46,14 +49,22 @@ def generate_recovery_message(order_data: dict, customer_data: dict, payment_lin
     Returns:
         dict with message, tone, language, channel
     """
+    cache_key = (customer_data.get("name", ""), order_data.get("amount_inr", order_data.get("amount", 0)), payment_link_url)
+    if cache_key in _message_cache:
+        return _message_cache[cache_key].copy()
+
     key = api_key or os.getenv("OPENAI_API_KEY")
     if key:
         try:
-            return _generate_with_llm(order_data, customer_data, payment_link_url, key)
+            result = _generate_with_llm(order_data, customer_data, payment_link_url, key)
+            _message_cache[cache_key] = result
+            return result
         except Exception as e:
             logger.warning(f"LLM message generation failed, using fallback: {e}")
 
-    return _generate_with_template(order_data, customer_data, payment_link_url)
+    result = _generate_with_template(order_data, customer_data, payment_link_url)
+    _message_cache[cache_key] = result
+    return result
 
 
 def _generate_with_llm(order_data: dict, customer_data: dict, payment_link_url: str, api_key: str) -> dict:

@@ -47,6 +47,9 @@ PERMANENT_ERROR_CODES = {
 }
 
 
+_classify_cache: dict = {}
+
+
 def classify_failure(payment_data: dict, api_key: str = None) -> dict:
     """
     Classify a payment failure.
@@ -58,16 +61,24 @@ def classify_failure(payment_data: dict, api_key: str = None) -> dict:
     Returns:
         dict with classification, confidence, reasoning, retry_recommended
     """
+    cache_key = (payment_data.get("error_code", ""), payment_data.get("payment_method", payment_data.get("method", "")))
+    if cache_key in _classify_cache:
+        return _classify_cache[cache_key].copy()
+
     # Try LLM first
     key = api_key or os.getenv("OPENAI_API_KEY")
     if key:
         try:
-            return _classify_with_llm(payment_data, key)
+            result = _classify_with_llm(payment_data, key)
+            _classify_cache[cache_key] = result
+            return result
         except Exception as e:
             logger.warning(f"LLM classification failed, using fallback: {e}")
 
     # Fallback to rules-based
-    return _classify_with_rules(payment_data)
+    result = _classify_with_rules(payment_data)
+    _classify_cache[cache_key] = result
+    return result
 
 
 def _classify_with_llm(payment_data: dict, api_key: str) -> dict:

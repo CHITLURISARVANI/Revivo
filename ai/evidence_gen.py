@@ -28,6 +28,9 @@ Return JSON:
 }"""
 
 
+_evidence_cache: dict = {}
+
+
 def generate_dispute_evidence(dispute_data: dict, winnability_result: dict, api_key: str = None) -> dict:
     """
     Generate contest evidence for a dispute.
@@ -40,14 +43,25 @@ def generate_dispute_evidence(dispute_data: dict, winnability_result: dict, api_
     Returns:
         dict with contest_text, evidence_documents, summary
     """
+    cache_key = (
+        dispute_data.get("reason_code", dispute_data.get("reason", "")),
+        dispute_data.get("amount", 0),
+    )
+    if cache_key in _evidence_cache:
+        return _evidence_cache[cache_key].copy()
+
     key = api_key or os.getenv("OPENAI_API_KEY")
     if key:
         try:
-            return _generate_with_llm(dispute_data, winnability_result, key)
+            result = _generate_with_llm(dispute_data, winnability_result, key)
+            _evidence_cache[cache_key] = result
+            return result
         except Exception as e:
             logger.warning(f"LLM evidence generation failed, using fallback: {e}")
 
-    return _generate_with_template(dispute_data, winnability_result)
+    result = _generate_with_template(dispute_data, winnability_result)
+    _evidence_cache[cache_key] = result
+    return result
 
 
 def _generate_with_llm(dispute_data: dict, winnability_result: dict, api_key: str) -> dict:
